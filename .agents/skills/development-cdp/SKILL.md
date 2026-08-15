@@ -38,8 +38,14 @@ From this repo, after `pnpm build`:
 
 ```sh
 node scripts/write-dev-patch.mjs /tmp/dsh-pihuo-web.patch.yml
+
+# npm-published launcher (no harness build)
 NODE_PATH=/tmp/dsh-pihuo-node_modules \
-  pnpm --dir ../deepseek-harness exec dsh --profile web --patch /tmp/dsh-pihuo-web.patch.yml
+  npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
+
+# or a source checkout after `pnpm install && pnpm run build`
+NODE_PATH=/tmp/dsh-pihuo-node_modules \
+  pnpm --dir ../deepseek-harness dsh web --patch /tmp/dsh-pihuo-web.patch.yml
 ```
 
 `write-dev-patch.mjs` writes package-name rows (so

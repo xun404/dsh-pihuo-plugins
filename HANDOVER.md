@@ -70,8 +70,14 @@ pnpm test
 pnpm typecheck
 pnpm build
 node scripts/write-dev-patch.mjs /tmp/dsh-pihuo-web.patch.yml
+
+# npm 安装的 dsh（快，看效果用这条）
 NODE_PATH=/tmp/dsh-pihuo-node_modules \
-  pnpm --dir ../deepseek-harness exec dsh --profile web --patch /tmp/dsh-pihuo-web.patch.yml
+  npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
+
+# 或源码检出（要先 pnpm install && pnpm run build）
+NODE_PATH=/tmp/dsh-pihuo-node_modules \
+  pnpm --dir ../deepseek-harness dsh web --patch /tmp/dsh-pihuo-web.patch.yml
 ```
 
 假 ACP：`packages/acp-protocol/bin/mock-acp-agent.mjs`（`MOCK_TEXT` / `MOCK_STOP` / `MOCK_HANG` / `MOCK_PERMISSION`）。
