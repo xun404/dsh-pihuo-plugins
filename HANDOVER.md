@@ -15,7 +15,7 @@
 | 期 | 内容 | 状态 |
 |---|---|---|
 | 0 | 仓库骨架、组合包、交接文档 | **完成** |
-| 1 | 固定 CLI `pihuo-acp` + `acp_worker` 工具卡 | **Host 契约 + client factory 已通；Web 手工验收未做** |
+| 1 | 固定 CLI `pihuo-acp` + `acp_worker` 工具卡 | **Host 契约 + client factory 已通；npm `dsh web` + CDP 已确认 `__DSH_BOOT__` 含 `@pihuo/dsh-ui-acp-worker`** |
 | 2 | 会话池、复用键、`ctx.approval` | 未开始 |
 | 3 | Registry + `settings.section` | 未开始 |
 | 4 | `leader-persona`、dock、可选 ephemeral 流 | 未开始 |
