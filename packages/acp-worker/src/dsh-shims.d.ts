@@ -17,7 +17,6 @@ declare module '@deepseek-ai/cordis' {
 
 declare module '@deepseek-ai/dsh-session' {
   export type SessionId = string & { readonly __brand: 'SessionId' }
-  export function SessionId(id: string): SessionId
 }
 
 declare module '@deepseek-ai/dsh-subagent' {

@@ -13,7 +13,7 @@ import type {
   SubagentResult,
   SubagentRun,
 } from '@deepseek-ai/dsh-subagent'
-import { SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionId } from '@deepseek-ai/dsh-session'
 import type { SubprocessHandle, SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
 import { AcpSessionDriver } from '@pihuo/dsh-acp-protocol'
 import { randomUUID } from 'node:crypto'
@@ -84,7 +84,7 @@ class PihuoAcpProvider implements SubagentProvider {
       )
     }
     const cwd = resolveCwd(this.config.cwd, request)
-    const id = SessionId(randomUUID())
+    const id = randomUUID() as SessionId
     const spawn = this.ctx.subprocess.spawn.bind(this.ctx.subprocess) as (spec: SubprocessSpawnSpec) => SubprocessHandle
     const child = spawn({
       argv: [this.config.command, ...this.config.args],
