@@ -40,20 +40,17 @@ From this repo, after `pnpm build`:
 node scripts/write-dev-patch.mjs /tmp/dsh-pihuo-web.patch.yml
 
 # npm-published launcher (no harness build)
-NODE_PATH=/tmp/dsh-pihuo-node_modules \
-  npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
+npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
 
 # or a source checkout after `pnpm install && pnpm run build`
-NODE_PATH=/tmp/dsh-pihuo-node_modules \
-  pnpm --dir ../deepseek-harness dsh web --patch /tmp/dsh-pihuo-web.patch.yml
+pnpm --dir ../deepseek-harness dsh web --patch /tmp/dsh-pihuo-web.patch.yml
 ```
 
-`write-dev-patch.mjs` writes package-name rows (so
-`__DSH_BOOT__.entries[].id` equals the client factory id
-`@pihuo/dsh-ui-acp-worker`) and symlinks this checkout under
-`NODE_PATH=/tmp/dsh-pihuo-node_modules`. Do **not** use absolute
-`src/index.ts` paths for a `dsh.client` package: `client-modules` keys the
-graph by Loader `name`, and a path id will not match `lib/client.js`.
+`write-dev-patch.mjs` writes package-name rows and **symlinks this checkout
+into `$DSH_HOME/profiles/web/node_modules`**. NODE_PATH is not enough:
+Node ESM `import()` ignores it. Do **not** use absolute `src/index.ts`
+paths for a `dsh.client` package: `client-modules` keys the graph by
+Loader `name`, and a path id will not match `lib/client.js`.
 
 Do **not** `--patch packages/bundle/cordis.patch.yml` against a stock web
 profile: those names are not in the profile, and empty `args` refuse
