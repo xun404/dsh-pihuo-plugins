@@ -9,8 +9,9 @@
 | [`dsh-plugin-author`](dsh-plugin-author/SKILL.md) | 从需求落到可安装插件：选型、脚手架、实现、接线 |
 | [`dsh-plugin-runtime`](dsh-plugin-runtime/SKILL.md) | Cordis 运行时：Fiber、inject、事件、effect、HMR |
 | [`dsh-plugin-compose`](dsh-plugin-compose/SKILL.md) | Profile / Bundle / patch 层、`dsh plugin`、安装与发布 |
-| [`dsh-plugin-conventions`](dsh-plugin-conventions/SKILL.md) | 命名、seam、配置、包布局、扩展点选择 |
+| [`dsh-plugin-conventions`](dsh-plugin-conventions/SKILL.md) | 命名、seam、配置、包布局、扩展点、注释 |
 | [`dsh-plugin-client`](dsh-plugin-client/SKILL.md) | 浏览器半：`dsh.client`、slots、设置卡片 |
 | [`dsh-plugin-review`](dsh-plugin-review/SKILL.md) | 对照规范审查插件 |
+| [`development-cdp`](development-cdp/SKILL.md) | 用 Chrome CDP 调试 dsh Web（`scripts/cdp-check.mjs`） |
 
 事实各有唯一出处。跨技能只引用，不复述。

@@ -2,6 +2,8 @@
 
 本仓库编写 **DeepSeek Harness 树外插件**。任何 agent 工具（Grok、Claude Code、Cursor、Codex 等）都读这份文件。
 
+进度与阶段以 [HANDOVER.md](HANDOVER.md) 为准；动手前先读它，做完一期就更新状态表。
+
 ## 技能在哪
 
 规范与流程的唯一出处是 [`.agents/skills/`](.agents/skills/README.md)，不要写进 `.grok/`、`.claude/skills/`、`.cursor/skills/` 再维护一份。
@@ -16,6 +18,7 @@
 | 命名、seam、扩展点、包怎么拆 | [dsh-plugin-conventions](.agents/skills/dsh-plugin-conventions/SKILL.md) |
 | 浏览器半、slots、设置 UI | [dsh-plugin-client](.agents/skills/dsh-plugin-client/SKILL.md) |
 | 审查已有插件 | [dsh-plugin-review](.agents/skills/dsh-plugin-review/SKILL.md) |
+| 浏览器里验收 / CDP | [development-cdp](.agents/skills/development-cdp/SKILL.md) |
 
 ## 对照源码
 
@@ -25,3 +28,4 @@
 
 - 不要往 harness 的 `packages/` 加第一方包，除非用户明确要求改 harness。
 - 不要在本仓库复制技能到各厂商目录。某个工具只扫描自己的 skills 目录时，对该目录做**指向** `.agents/skills` 的符号链接，不要拷贝。
+- 导出 API 与生命周期边界写完整、准确的英文 JSDoc。规则在 [comments.md](.agents/skills/dsh-plugin-conventions/references/comments.md)。

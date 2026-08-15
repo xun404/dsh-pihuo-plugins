@@ -28,7 +28,9 @@
 
 `resolveBundleDir(installAnchor, profileDir)`：安装目录优先。这保证 `@deepseek-ai/dsh-base` 不会被 profile 里一份旧拷贝劫持。
 
-Loader `baseUrl` 是 profile 目录。`--patch` overlay 只贡献条目，不改 baseUrl，所以 overlay 里的相对 `name` 仍相对 profile，**不是**相对 overlay 文件。开发期插件 `name` 用绝对路径。
+Loader `baseUrl` 是 profile 目录。`--patch` overlay 只贡献条目，不改 baseUrl，所以 overlay 里的相对 `name` 仍相对 profile，**不是**相对 overlay 文件。开发期 Host 插件 `name` 用绝对路径。
+
+声明了 `dsh.client` 的包：Loader `name` 必须是**包名**（与 `lib/client.js` 里 `__ModuleLoader__.load({ id })` 一致）。绝对 `src/index.ts` 会让 `client-modules` 永久记成「不是 client 包」；绝对包根路径能扫到 bundle，但 boot `entries[].id` 是路径，factory 对不上。本仓库 `scripts/write-dev-patch.mjs` 写包名行，并用 `NODE_PATH` 把本检出链进去。
 
 ## 用户层热加载
 

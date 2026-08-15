@@ -45,12 +45,31 @@ Host 插件与浏览器插件共用 Loader 语义（Fiber、inject、update）�
 }
 ```
 
-- 必须同时是 Loader 树上的一条 Host 行（bundle patch insert 包名），`client-modules` 才扫得到。
-- `exports["./client"]` 必须指向**构建后**的 bundle。缺文件时启动会聚合成构建说明错误。
+- 必须同时是 Loader 树上的一条 Host 行，`client-modules` 才扫得到。`--patch` 开发行的 `name` 必须是**包根目录的绝对路径**（或已安装的包名），不要指向 `src/index.ts`，否则 `require.resolve(<name>/package.json)` 失败，该包永远不是 client 行。
+- `exports["./client"]` 必须指向 **CJS factory bundle**（通常 `lib/client.js`），不是 `tsc` 的 ESM 目录。缺文件时启动会聚合成 `run pnpm run build` 错误。
 - `immediately: true` 仅给外壳级包。功能插件默认懒加载。
-- `dsh.client.inject` 是 Cordis 服务依赖，与模块 `export const inject` 一起用。
+- `dsh.client.inject` 是**信息性包名边**（如 `@deepseek-ai/dsh-client-ui-tool`），不是 Cordis 服务名。`export const inject = ['slots']` 才是 apply 的服务依赖。
 
 扫描按包名缓存且不过期：改「是不是 client 包」要重启 dsh。改 bundle 内容走 rebuild 通知，不是改 package.json 字段。
+
+## `./client` 产物合同
+
+Host 把该文件当经典脚本挂到 `/plugins/<id>/client.js`。浏览器半是惰性 CJS：脚本执行时必须登记 factory，`require` 时才跑模块体。
+
+```js
+window.__ModuleLoader__.load({
+  id: '<package name>', // 必须等于 Loader 行的 name / boot entries[].id
+  factory: (require) => {
+    var module = { exports: {} }; var exports = module.exports;
+    // CJS body; `require('react')` 走外壳 module table
+    return module.exports;
+  },
+});
+```
+
+- `react` / `react/jsx-runtime` / 其它 platform module **必须 external**，不要打进包。
+- 不要发 ESM `import`。tsc 的 `lib/client/index.js` 只能当类型，不能当 served bundle。
+- 本仓库：`packages/ui-acp-worker/scripts/build-client.mjs`（esbuild）。
 
 ## 实现纪律
 

@@ -1,0 +1,33 @@
+{
+  "name": "dsh-pihuo-plugins",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Out-of-tree DeepSeek Harness plugins: PiHuo-style workers on the dsh agent loop",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xun404/dsh-pihuo-plugins.git"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "cdp": "node scripts/cdp-check.mjs",
+    "dev:patch": "node scripts/write-dev-patch.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": ["@deepseek-ai/*"]
+    }
+  }
+}

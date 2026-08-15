@@ -31,6 +31,7 @@ metadata:
 - [ ] 该拆 seam 时 Provider 与 Consumer 不互相依赖。
 - [ ] 包名、ctx key、工具名、事件名符合命名表。
 - [ ] 没有把产品功能做成 `cordis_define` 动态包。
+- [ ] 导出符号与非显然边界有准确 JSDoc；没有过时或复述式注释（[comments](../dsh-plugin-conventions/references/comments.md)）。
 
 ### 运行时 — [runtime](../dsh-plugin-runtime/SKILL.md)
 
@@ -59,6 +60,7 @@ metadata:
 ### 浏览器半（若有）— [client](../dsh-plugin-client/SKILL.md)
 
 - [ ] 声明 `dsh.client` + `exports["./client"]`，且 Host 行会挂上该包。
+- [ ] `./client` 是 `__ModuleLoader__.load` CJS factory，id 等于包名；`react` external。
 - [ ] 只通过 `slots.register` 组合；组件不碰 `ctx`。
 - [ ] `./client` 没有多余值导出，没有跨插件 import 组件。
 - [ ] 没有假设自己会出现在内置设置白名单里。

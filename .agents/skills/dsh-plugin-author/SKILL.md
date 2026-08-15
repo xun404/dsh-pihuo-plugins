@@ -69,10 +69,12 @@ argument-hint: "[tool|service|adapter|hook|ui] <name>"
 开发期（未打成组合包）：
 
 ```yaml
-# scratch cordis.yml — insert 行的 name 必须是绝对路径
+# scratch cordis.yml
+# Host-only 可以指绝对 src/index.ts。
+# dsh.client 包必须用包名（与 client factory id 一致），见 compose / client。
 - insert:
     - id: <plugin-id>
-      name: '/absolute/path/to/<pkg>/src/index.ts'
+      name: '@scope/dsh-example'
       config: {}
 ```
 

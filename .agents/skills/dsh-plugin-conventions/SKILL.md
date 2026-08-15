@@ -4,8 +4,9 @@ description: >
   DeepSeek Harness plugin conventions — capability seams, naming, Config
   schema, package layout, ctx keys, extension-point choice. Use when deciding
   plugin structure, naming a service, splitting definition/provider/consumer,
-  choosing where to hang new behavior, or the user says /dsh-plugin-conventions,
-  "插件规范", "该拆几个包", "挂在哪个扩展点".
+  choosing where to hang new behavior, writing or reviewing comments, or the
+  user says /dsh-plugin-conventions, "插件规范", "该拆几个包", "挂在哪个扩展点",
+  "注释规范".
 metadata:
   short-description: dsh plugin conventions
 ---
@@ -16,7 +17,7 @@ metadata:
 
 对照：`../deepseek-harness/docs/architecture.md`、`docs/capability-seams.md`、`docs/cookbook/adding-a-package.md`。
 
-展开：[references/seams.md](references/seams.md)、[references/package.md](references/package.md)、[references/extension-points.md](references/extension-points.md)。
+展开：[references/seams.md](references/seams.md)、[references/package.md](references/package.md)、[references/extension-points.md](references/extension-points.md)、[references/comments.md](references/comments.md)。
 
 ## 硬规则
 
@@ -29,6 +30,7 @@ metadata:
 7. **一个 Context key 一种合同。** 单数 key = 一台引擎/当前配置；复数 key = 注册表。Host 与 Client 禁止用同一 key 表达不兼容类型。
 8. **树外包不要冒充第一方。** 包名不用 `@deepseek-ai/`。不要改 `dsh-base` / `dsh-web-app` 来「顺便」带上自己。
 9. **动态包不是产品交付。** `cordis_define` / `cordis_run` 只活在内存，重启即空，vm 不是安全边界。可安装功能做成普通组合包。
+10. **注释必须完整、准确、可单独维护。** 导出符号、非显然约束、协议/生命周期边界都要有 JSDoc；注释与代码不一致是错误。细则见 [comments.md](references/comments.md)。
 
 ## 选型口诀
 

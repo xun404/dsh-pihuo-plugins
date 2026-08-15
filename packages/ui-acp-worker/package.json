@@ -1,0 +1,40 @@
+{
+  "name": "@pihuo/dsh-ui-acp-worker",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": ["@deepseek-ai/dsh-client-ui-tool"]
+    }
+  },
+  "files": ["lib/index.js", "lib/client.js", "lib/**/*.d.ts"],
+  "scripts": {
+    "prepare": "tsc -p tsconfig.json && node scripts/build-client.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.3.1",
+    "esbuild": "^0.25.9",
+    "react": "^18.2.0"
+  },
+  "license": "MIT"
+}

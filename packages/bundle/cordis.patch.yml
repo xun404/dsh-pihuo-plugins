@@ -1,0 +1,22 @@
+# @pihuo/dsh-pihuo — insert over the profile root after dsh-base / dsh-web-app.
+# Patch replaces whole config rows; later profile patches must restate keys they change.
+
+- insert:
+    - id: pihuo-acp
+      name: '@pihuo/dsh-acp-worker'
+      config:
+        providerName: pihuo-acp
+        # Override command/args in the profile layer. Empty args refuse start().
+        command: node
+        args: []
+        permission: reject
+
+    - id: acp-worker-tool
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: pihuo-acp
+        toolName: acp_worker
+        maxDepth: provider-managed
+
+    - id: ui-acp-worker
+      name: '@pihuo/dsh-ui-acp-worker'
