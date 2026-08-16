@@ -19,3 +19,16 @@ export function pickAutoPermission(
   if (allow === undefined) return { outcome: 'cancelled' }
   return { outcome: 'selected', optionId: allow.optionId }
 }
+
+/**
+ * Map a one-shot human decision onto an ACP option.
+ * `allowed-once` selects `allow_once` (then `allow_always`). Anything else cancels.
+ */
+export async function decideAskPermission(
+  options: readonly AcpPermissionOption[],
+  decide: () => Promise<'allowed-once' | 'rejected' | 'cancelled' | 'unavailable'>,
+): Promise<{ outcome: 'selected'; optionId: string } | { outcome: 'cancelled' }> {
+  const outcome = await decide()
+  if (outcome !== 'allowed-once') return { outcome: 'cancelled' }
+  return pickAutoPermission('allow', options)
+}

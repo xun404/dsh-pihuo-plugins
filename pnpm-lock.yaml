@@ -39,6 +39,9 @@ importers:
       '@pihuo/dsh-worker-protocol':
         specifier: workspace:^
         version: link:../worker-protocol
+      '@pihuo/dsh-worker-runtime':
+        specifier: workspace:^
+        version: link:../worker-runtime
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -46,12 +49,17 @@ importers:
 
   packages/bundle:
     dependencies:
-      '@pihuo/dsh-acp-worker':
-        specifier: workspace:^
-        version: link:../acp-worker
-      '@pihuo/dsh-ui-acp-worker':
+      '@pihuo/dsh-pihuo-acp-ui':
         specifier: workspace:^
         version: link:../ui-acp-worker
+      '@pihuo/dsh-pihuo-acp-worker':
+        specifier: workspace:^
+        version: link:../acp-worker
+      '@pihuo/dsh-pihuo-presets':
+        specifier: workspace:^
+        version: link:../presets
+
+  packages/presets: {}
 
   packages/ui-acp-worker:
     devDependencies:

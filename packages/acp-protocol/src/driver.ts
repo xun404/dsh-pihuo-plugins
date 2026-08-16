@@ -8,18 +8,29 @@ import {
   type ClientContext,
 } from '@agentclientprotocol/sdk'
 import type { WorkerPermissionPolicy, WorkerPromptResult } from '@pihuo/dsh-worker-protocol'
+import { extractModelOptions, type ModelOptionsResult } from './models.js'
 import { pickAutoPermission } from './permission.js'
 import { acpStopReason } from './stop-reason.js'
 
+export type PermissionDecision =
+  | { readonly outcome: 'selected'; readonly optionId: string }
+  | { readonly outcome: 'cancelled' }
+
 /**
- * Transport and auto-permission policy for one child ACP process.
- * `ask` is not handled here (phase 2 / `ctx.approval`). The caller owns spawn.
+ * Transport and permission policy for one child ACP process.
+ * `ask` requires {@link AcpDriverOptions.askPermission}; without it, asks cancel.
+ * The caller owns spawn and process lifetime.
  */
 export interface AcpDriverOptions {
   readonly cwd: string
-  readonly permission: Exclude<WorkerPermissionPolicy, 'ask'>
+  readonly permission: WorkerPermissionPolicy
   readonly stdin: Writable
   readonly stdout: Readable
+  /**
+   * Called when `permission` is `ask`. Must not throw; return `cancelled` to
+   * refuse the child. Used to bridge `ctx.approval`.
+   */
+  readonly askPermission?: (options: ReadonlyArray<{ optionId: string; kind?: string }>) => Promise<PermissionDecision>
 }
 
 export class AcpProtocolError extends Error {
@@ -34,12 +45,24 @@ export class AcpProtocolError extends Error {
  * Owns initialize + session/new + prompt + cancel. Does not spawn or kill
  * the process — the caller owns the `SubprocessHandle`.
  */
+export interface AcpAgentInfo {
+  readonly protocolVersion: number
+  readonly agentName?: string
+  readonly agentVersion?: string
+}
+
 export class AcpSessionDriver {
   private agent!: ClientContext
   private sessionId: string | null = null
   private output = ''
+  private info: AcpAgentInfo | undefined
 
   private constructor(private readonly opts: AcpDriverOptions) {}
+
+  /** Identity advertised by `initialize`, when the handshake finished. */
+  get agentInfo(): AcpAgentInfo | undefined {
+    return this.info
+  }
 
   /**
    * Handshake `initialize` on the given stdio pair.
@@ -51,7 +74,10 @@ export class AcpSessionDriver {
     app
       .onRequest(methods.client.session.requestPermission, async (ctx) => {
         const params = ctx.params as { options?: Array<{ optionId: string; kind?: string }> }
-        const picked = pickAutoPermission(opts.permission, params.options ?? [])
+        const options = params.options ?? []
+        const picked = opts.permission === 'ask'
+          ? await (opts.askPermission?.(options) ?? Promise.resolve({ outcome: 'cancelled' as const }))
+          : pickAutoPermission(opts.permission, options)
         if (picked.outcome === 'cancelled') return { outcome: { outcome: 'cancelled' as const } }
         return { outcome: { outcome: 'selected' as const, optionId: picked.optionId } }
       })
@@ -78,17 +104,45 @@ export class AcpSessionDriver {
         'protocol_incompatible',
       )
     }
+    const agentName = typeof init.agentInfo?.name === 'string' && init.agentInfo.name !== ''
+      ? init.agentInfo.name
+      : undefined
+    const agentVersion = typeof init.agentInfo?.version === 'string' && init.agentInfo.version !== ''
+      ? init.agentInfo.version
+      : undefined
+    drv.info = {
+      protocolVersion: init.protocolVersion,
+      ...agentName === undefined ? {} : { agentName },
+      ...agentVersion === undefined ? {} : { agentVersion },
+    }
     return drv
   }
 
-  /** Create one ACP session. `mcpServers` is always empty. */
-  async sessionNew(): Promise<string> {
+  /**
+   * Create one ACP session. `mcpServers` is always empty.
+   * Models come from `configOptions` on the `session/new` result.
+   */
+  async sessionNew(): Promise<ModelOptionsResult & { sessionId: string }> {
     const response = await this.agent.request(methods.agent.session.new, {
       cwd: this.opts.cwd,
       mcpServers: [],
     })
     this.sessionId = response.sessionId
-    return response.sessionId
+    const models = extractModelOptions(response.configOptions ?? [])
+    return { sessionId: response.sessionId, ...models }
+  }
+
+  /**
+   * Pin the session default model (`session/set_config_option`).
+   * No-op when there is no session yet.
+   */
+  async setConfigOption(configId: string, value: string): Promise<void> {
+    if (this.sessionId === null) throw new AcpProtocolError('No active session', 'no_session')
+    await this.agent.request(methods.agent.session.setConfigOption, {
+      sessionId: this.sessionId,
+      configId,
+      value,
+    })
   }
 
   /**

@@ -3,20 +3,16 @@
 
 - insert:
     - id: pihuo-acp
-      name: '@pihuo/dsh-acp-worker'
+      name: '@pihuo/dsh-pihuo-acp-worker'
       config:
         providerName: pihuo-acp
         # Override command/args in the profile layer. Empty args refuse start().
         command: node
         args: []
-        permission: reject
 
-    - id: acp-worker-tool
-      name: '@deepseek-ai/dsh-tool-subagent'
-      config:
-        provider: pihuo-acp
-        toolName: acp_worker
-        maxDepth: provider-managed
+    - id: pihuo-acp-ui
+      name: '@pihuo/dsh-pihuo-acp-ui'
 
-    - id: ui-acp-worker
-      name: '@pihuo/dsh-ui-acp-worker'
+    # Copies packaged presets into $DSH_HOME/.agent-presets (see @pihuo/dsh-pihuo-presets).
+    - id: pihuo-presets
+      name: '@pihuo/dsh-pihuo-presets'

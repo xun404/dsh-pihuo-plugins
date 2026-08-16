@@ -1,5 +1,5 @@
 {
-  "name": "@pihuo/dsh-acp-worker",
+  "name": "@pihuo/dsh-pihuo-acp-worker",
   "version": "0.1.0",
   "type": "module",
   "main": "lib/index.js",
@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@pihuo/dsh-acp-protocol": "workspace:^",
-    "@pihuo/dsh-worker-protocol": "workspace:^"
+    "@pihuo/dsh-worker-protocol": "workspace:^",
+    "@pihuo/dsh-worker-runtime": "workspace:^"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

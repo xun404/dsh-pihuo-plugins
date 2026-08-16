@@ -4,7 +4,7 @@ import { Config, name } from '../src/config.ts'
 
 describe('acp-worker exports', () => {
   it('uses a stable plugin name', () => {
-    assert.equal(name, 'acp-worker')
+    assert.equal(name, 'pihuo-acp')
   })
 })
 
@@ -16,7 +16,6 @@ describe('Config', () => {
     const ok = Config['~standard'].validate({ command: 'node', args: ['agent.js'] })
     assert.ok('value' in ok)
     assert.equal(ok.value.providerName, 'pihuo-acp')
-    assert.equal(ok.value.permission, 'reject')
     assert.equal(ok.value.disposeGraceMs, 3000)
     assert.deepEqual(ok.value.args, ['agent.js'])
   })

@@ -1,4 +1,4 @@
-# @pihuo/dsh-acp-worker
+# @pihuo/dsh-pihuo-acp-worker
 
 Host plugin. Registers `ctx.subagents` provider `pihuo-acp` (config `providerName`).
 
@@ -16,7 +16,6 @@ At runtime the dsh profile supplies `@deepseek-ai/cordis`, `@deepseek-ai/dsh-ses
 | `command` | required | Child executable. |
 | `args` | `[]` | Must be non-empty at `start()` — empty refuses so a bare `node` cannot hang. |
 | `cwd` | parent session cwd | Absolute after load. |
-| `permission` | `reject` | Auto policy; `ask` is phase 2. |
 | `env` | `{}` | Merged after the subprocess seam scrubs parent env. |
 | `disposeGraceMs` | `3000` | SIGTERM→SIGKILL grace. |
 
@@ -26,7 +25,6 @@ Local mock:
 command: node
 args:
   - /absolute/path/to/packages/acp-protocol/bin/mock-acp-agent.mjs
-permission: allow
 ```
 
 `scripts/write-dev-patch.mjs` writes that overlay.

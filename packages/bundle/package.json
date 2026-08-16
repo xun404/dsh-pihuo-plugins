@@ -24,8 +24,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@pihuo/dsh-acp-worker": "workspace:^",
-    "@pihuo/dsh-ui-acp-worker": "workspace:^"
+    "@pihuo/dsh-pihuo-acp-worker": "workspace:^",
+    "@pihuo/dsh-pihuo-acp-ui": "workspace:^",
+    "@pihuo/dsh-pihuo-presets": "workspace:^"
   },
   "license": "MIT"
 }

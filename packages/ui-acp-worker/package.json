@@ -1,5 +1,5 @@
 {
-  "name": "@pihuo/dsh-ui-acp-worker",
+  "name": "@pihuo/dsh-pihuo-acp-ui",
   "version": "0.1.0",
   "type": "module",
   "main": "lib/index.js",
@@ -18,7 +18,13 @@
   "dsh": {
     "client": {
       "platform": "web",
-      "inject": ["@deepseek-ai/dsh-client-ui-tool"]
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-tool",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ]
     }
   },
   "files": ["lib/index.js", "lib/client.js", "lib/**/*.d.ts"],

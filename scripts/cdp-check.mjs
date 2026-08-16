@@ -253,7 +253,7 @@ await withCdp(async (ws, sendFn, page) => {
           bootRev: boot && typeof boot.rev === 'string' ? boot.rev : null,
           bootEntryIds: entries.map(e => e && e.id),
           hasUiAcpWorker: entries.some(e => e && (
-            e.id === '@pihuo/dsh-ui-acp-worker' || String(e.id).includes('ui-acp-worker')
+            e.id === '@pihuo/dsh-pihuo-acp-ui' || String(e.id).includes('pihuo-acp-ui')
           )),
         };
       })()`,

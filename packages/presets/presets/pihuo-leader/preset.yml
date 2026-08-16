@@ -1,0 +1,3 @@
+name: PiHuo Leader
+description: 调度型 Leader：用 acp_worker 委派 ACP Worker，并保留文件、Shell、检索与子代理能力。
+order: 10

@@ -4,8 +4,30 @@
  * can both import the types without pulling a runtime.
  */
 
-/** How a worker answers ACP `session/request_permission` (or a future equivalent). */
-export type WorkerPermissionPolicy = 'ask' | 'allow' | 'reject'
+export {
+  DEFAULT_IDLE_TTL_MS,
+  DEFAULT_POOL_MAX,
+  MAX_POOL_MAX,
+  WORKER_ID_DEFAULT,
+  WORKER_ID_PATTERN,
+  WORKER_USER_CONFIG_DEFAULTS,
+  decodeWorkerUserFile,
+  encodeWorkerUserFile,
+  mergeWorkerConfig,
+  parseWorkerRoster,
+  parseWorkerRosterEntry,
+  parseWorkerUserConfig,
+  upgradeV1Config,
+} from './config.js'
+export type { WorkerCheck, WorkerCheckKind, WorkerRosterEntry, WorkerUserConfig, WorkerUserFile } from './config.js'
+export { WORKER_CATALOG } from './catalog.js'
+export type { CatalogEntrySource, WorkerCatalogEntry } from './catalog.js'
+export { ACP_REGISTRY_URL, parseAcpRegistry, projectRegistryAgent } from './registry.js'
+export type { AcpRegistryTarget, CatalogDistribution } from './registry.js'
+export { binaryNameFromPackageSpec, packageSpecFromArgs } from './package-spec.js'
+export { parseWorkerIdHint, resolveRosterWorker, stripWorkerIdLine } from './select.js'
+export { chatPresetToWorkerPolicy, parentChatPreset } from './inherit.js'
+export type { ChatPermissionPreset, WorkerPermissionPolicy } from './inherit.js'
 
 /**
  * Terminal outcome of one worker prompt, aligned with

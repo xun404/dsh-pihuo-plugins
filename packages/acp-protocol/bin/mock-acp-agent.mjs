@@ -15,6 +15,23 @@ const TEXT = process.env.MOCK_TEXT ?? 'mock child answer'
 const STOP = process.env.MOCK_STOP ?? 'end_turn'
 const HANG = process.env.MOCK_HANG === '1'
 const WANT_PERMISSION = process.env.MOCK_PERMISSION === '1'
+const WANT_MODELS = process.env.MOCK_MODELS === '1'
+
+const MODEL_OPTIONS = [
+  { value: 'flash', name: 'Flash' },
+  { value: 'pro', name: 'Pro' },
+]
+
+function modelConfig(currentValue) {
+  return {
+    id: 'model',
+    name: 'Model',
+    category: 'model',
+    type: 'select',
+    currentValue,
+    options: MODEL_OPTIONS,
+  }
+}
 
 let resolveHang
 
@@ -23,7 +40,13 @@ agent({ name: 'pihuo-mock-acp' })
     protocolVersion: PROTOCOL_VERSION,
     agentCapabilities: { loadSession: false },
   }))
-  .onRequest('session/new', async () => ({ sessionId: 'mock-session' }))
+  .onRequest('session/new', async () => ({
+    sessionId: 'mock-session',
+    ...WANT_MODELS ? { configOptions: [modelConfig('flash')] } : {},
+  }))
+  .onRequest('session/set_config_option', async (ctx) => ({
+    configOptions: [modelConfig(String(ctx.params.value ?? 'flash'))],
+  }))
   .onRequest('session/prompt', async (ctx) => {
     const sessionId = ctx.params.sessionId
     if (WANT_PERMISSION) {

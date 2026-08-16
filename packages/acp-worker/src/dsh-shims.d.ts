@@ -12,6 +12,32 @@ declare module '@deepseek-ai/cordis' {
       spawn(spec: import('@deepseek-ai/dsh-subprocess').SubprocessSpawnSpec): import('@deepseek-ai/dsh-subprocess').SubprocessHandle
     }
     readonly logger: { warn(message: string): void }
+    get<K extends string>(name: K): unknown
+    on(event: string, listener: (payload: { readonly id?: string }) => void): () => void
+    readonly webServer?: {
+      register(route: {
+        readonly kind: 'exact' | 'prefix'
+        readonly path: string
+        handler(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse): void | Promise<void>
+      }): () => void
+    }
+    readonly approval?: {
+      request(req: {
+        agent: unknown
+        toolName: string
+        reason?: string
+        signal?: AbortSignal
+      }): Promise<'allowed-once' | 'rejected' | 'cancelled' | 'unavailable'>
+    }
+    inject(deps: string[], callback: (ctx: Context) => void): void
+    effect(factory: () => (() => void) | void, label?: string): unknown
+    readonly systemPrompt?: {
+      section(spec: {
+        readonly name: string
+        readonly order: number
+        text: string | (() => string)
+      }): () => void
+    }
   }
 }
 
@@ -32,7 +58,17 @@ declare module '@deepseek-ai/dsh-subagent' {
 
   export interface ResolvedSubagentStartRequest {
     readonly prompt: ReadonlyArray<{ readonly type: string; readonly text?: string }>
-    readonly parent: { readonly session: { readonly header: { readonly cwd?: string } } }
+    readonly label?: string
+    readonly parent: {
+      readonly session: {
+        readonly id?: string
+        readonly header: { readonly cwd?: string }
+        readonly events?: ReadonlyArray<{
+          readonly type?: string
+          readonly data?: { readonly preset?: unknown }
+        }>
+      }
+    }
     readonly signal: AbortSignal
   }
 

@@ -2,15 +2,13 @@
  * Loader identity and Standard Schema config for the ACP worker Host plugin.
  * Kept free of `@deepseek-ai/*` runtime imports so unit tests can load it.
  */
-import type { WorkerPermissionPolicy } from '@pihuo/dsh-worker-protocol'
-
-/** Loader display name. The registered provider name is `Config.providerName`. */
-export const name = 'acp-worker'
+/** Loader display name. Inventory id is the patch row `pihuo-acp`. */
+export const name = 'pihuo-acp'
 
 /** Required services: registry + process seam (credential scrub + tree teardown). */
 export const inject = ['subagents', 'subprocess']
 
-/** Plugin config. `ask` is phase 2 (`ctx.approval`); phase 1 is auto only. */
+/** Deployment defaults. User file `$DSH_HOME/pihuo/workers.json` overlays these. */
 export interface Config {
   /** Name on `ctx.subagents`. Default `pihuo-acp` — do not use first-party `acp`. */
   providerName: string
@@ -22,8 +20,6 @@ export interface Config {
    * Omit to inherit the parent session header cwd.
    */
   cwd?: string
-  /** Auto-answer policy for `session/request_permission`. */
-  permission: Exclude<WorkerPermissionPolicy, 'ask'>
   /** Extra env merged after the subprocess seam scrubs the parent env. */
   env: Record<string, string>
   /** POSIX SIGTERM→SIGKILL grace, milliseconds. */
@@ -50,7 +46,6 @@ export const Config = {
         providerName: raw.providerName ?? 'pihuo-acp',
         command: raw.command,
         args: raw.args ?? [],
-        permission: raw.permission ?? 'reject',
         env: raw.env ?? {},
         disposeGraceMs: raw.disposeGraceMs ?? 3000,
         ...raw.cwd === undefined ? {} : { cwd: raw.cwd },

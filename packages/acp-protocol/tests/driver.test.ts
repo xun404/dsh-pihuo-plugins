@@ -48,6 +48,45 @@ describe('AcpSessionDriver', () => {
     })
   })
 
+  it('asks through askPermission and then completes', async () => {
+    const child = spawn(process.execPath, [mock], {
+      env: { ...process.env, MOCK_TEXT: 'asked', MOCK_PERMISSION: '1' },
+      stdio: ['pipe', 'pipe', 'inherit'],
+    })
+    if (child.stdin === null || child.stdout === null) throw new Error('stdio')
+    try {
+      let asked = 0
+      const drv = await AcpSessionDriver.connect({
+        cwd: process.cwd(),
+        permission: 'ask',
+        stdin: child.stdin,
+        stdout: child.stdout,
+        askPermission: async () => {
+          asked += 1
+          return { outcome: 'selected', optionId: 'allow' }
+        },
+      })
+      await drv.sessionNew()
+      const result = await drv.prompt('go')
+      assert.equal(asked, 1)
+      assert.equal(result.ok, true)
+      assert.equal(result.output, 'asked')
+    } finally {
+      child.kill('SIGTERM')
+      await new Promise<void>((resolve) => child.once('exit', () => resolve()))
+    }
+  })
+
+  it('lists models from session/new configOptions', async () => {
+    await withDriver({ MOCK_MODELS: '1' }, async (drv) => {
+      const listed = await drv.sessionNew()
+      assert.equal(listed.ok, true)
+      assert.equal(listed.modelConfigId, 'model')
+      assert.deepEqual(listed.models.map(row => row.modelId), ['flash', 'pro'])
+      await drv.setConfigOption('model', 'pro')
+    })
+  })
+
   it('cancels a hanging prompt', async () => {
     await withDriver({ MOCK_HANG: '1', MOCK_TEXT: 'partial' }, async (drv) => {
       const ac = new AbortController()
