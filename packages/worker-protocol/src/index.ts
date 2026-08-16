@@ -25,7 +25,17 @@ export type { CatalogEntrySource, WorkerCatalogEntry } from './catalog.js'
 export { ACP_REGISTRY_URL, parseAcpRegistry, projectRegistryAgent } from './registry.js'
 export type { AcpRegistryTarget, CatalogDistribution } from './registry.js'
 export { binaryNameFromPackageSpec, packageSpecFromArgs } from './package-spec.js'
-export { parseWorkerIdHint, resolveRosterWorker, stripWorkerIdLine } from './select.js'
+export { inferTeamRole, parseDispatchHint, parseWorkerIdHint, resolveDispatch, resolveRosterWorker, stripWorkerIdLine } from './select.js'
+export type { DispatchHint, DispatchResolution } from './select.js'
+export {
+  TEAM_ROLE_PATTERN,
+  TEAM_ROLES,
+  decodeChatTeam,
+  encodeChatTeam,
+  parseChatTeam,
+  parseTeamMember,
+} from './team.js'
+export type { ChatTeam, TeamMember, TeamRole } from './team.js'
 export { chatPresetToWorkerPolicy, parentChatPreset } from './inherit.js'
 export type { ChatPermissionPreset, WorkerPermissionPolicy } from './inherit.js'
 
@@ -61,6 +71,8 @@ export interface WorkerPromptResult {
   readonly stopReason: WorkerStopReason
   /** Present only when `ok` is false; human-readable, not an internal code. */
   readonly error?: string
+  /** Live Think/Tool samples. Never a new session event type. */
+  readonly activities?: readonly WorkerActivity[]
 }
 
 /**
@@ -70,6 +82,9 @@ export interface WorkerPromptResult {
 export interface WorkerActivity {
   readonly kind: 'message' | 'thought' | 'tool' | 'plan'
   readonly text: string
+  readonly toolCallId?: string
+  readonly toolTitle?: string
+  readonly toolStatus?: string
 }
 
 /**
@@ -78,6 +93,9 @@ export interface WorkerActivity {
  */
 export interface AcpWorkerPresentationMeta {
   readonly workerId: string
+  readonly title?: string
+  readonly model?: string
+  readonly thinking?: string
   readonly output: string
   readonly stopReason: WorkerStopReason
   readonly activities?: readonly WorkerActivity[]

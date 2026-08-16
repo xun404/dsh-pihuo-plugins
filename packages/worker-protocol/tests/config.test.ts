@@ -15,10 +15,11 @@ describe('parseWorkerUserConfig', () => {
     const nodeBare = parseWorkerUserConfig({ command: 'node' })
     assert.ok('issues' in nodeBare)
 
-    const ok = parseWorkerUserConfig({ command: 'opencode', args: ['acp'] })
+    const ok = parseWorkerUserConfig({ command: 'opencode', args: ['acp'], reasoning: 'high' })
     assert.ok('value' in ok)
     assert.equal(ok.value.enabled, true)
     assert.equal(ok.value.poolMax, 4)
+    assert.equal(ok.value.reasoning, 'high')
   })
 
   it('clamps poolMax', () => {

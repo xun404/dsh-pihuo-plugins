@@ -7,6 +7,15 @@ export const NS = 'pihuo.workers'
 
 export type WorkersKey =
   | 'nav'
+  | 'team'
+  | 'teamIntro'
+  | 'teamEmpty'
+  | 'teamAssign'
+  | 'teamRole'
+  | 'roleGeneral'
+  | 'roleCoder'
+  | 'roleReview'
+  | 'roleResearch'
   | 'title'
   | 'listIntro'
   | 'empty'
@@ -79,10 +88,21 @@ export type WorkersKey =
   | 'fieldArgs'
   | 'argsPlaceholder'
   | 'fieldModel'
+  | 'fieldReasoning'
   | 'modelLoading'
   | 'modelRefresh'
   | 'modelEmpty'
   | 'modelAgentDefault'
+  | 'reasoningAgentDefault'
+  | 'reasoningEmpty'
+  | 'cardThink'
+  | 'cardTools'
+  | 'cardPlan'
+  | 'cardAnswer'
+  | 'teamRunning'
+  | 'teamIdle'
+  | 'teamAdd'
+  | 'teamInherit'
   | 'fieldIdleTtl'
   | 'fieldPoolMax'
   | 'probe'
@@ -105,6 +125,19 @@ export type WorkersKey =
 
 export const en: Record<WorkersKey, string> = {
   nav: 'ACP Worker',
+  team: 'Team',
+  teamIntro: 'Members the Leader started in this chat. Role, model, and thinking can be adjusted here.',
+  teamEmpty: 'No team yet. The Leader forms one by calling acp_worker, or add a registered worker below.',
+  teamAssign: 'Add',
+  teamRunning: 'Running',
+  teamIdle: 'Idle',
+  teamAdd: 'Add',
+  teamInherit: 'Inherit',
+  teamRole: 'Role',
+  roleGeneral: 'General',
+  roleCoder: 'Coder',
+  roleReview: 'Review',
+  roleResearch: 'Research',
   title: 'ACP Worker',
   search: 'Search',
   searchPlaceholder: 'Search',
@@ -177,11 +210,18 @@ export const en: Record<WorkersKey, string> = {
   fieldCommand: 'Command',
   fieldArgs: 'Arguments',
   argsPlaceholder: 'One per line',
-  fieldModel: 'Default model',
+  fieldModel: 'Model',
+  fieldReasoning: 'Thinking',
   modelLoading: 'Loading models…',
   modelRefresh: 'Refresh',
   modelEmpty: 'ACP does not support listing models.',
   modelAgentDefault: 'Agent default',
+  reasoningAgentDefault: 'Agent default',
+  reasoningEmpty: 'This model does not declare thinking.',
+  cardThink: 'Think',
+  cardTools: 'Tool',
+  cardPlan: 'Plan',
+  cardAnswer: 'Answer',
   fieldIdleTtl: 'Idle timeout (ms)',
   fieldPoolMax: 'Max processes',
   probe: 'Check PATH',
@@ -205,6 +245,19 @@ export const en: Record<WorkersKey, string> = {
 
 export const zh: Record<WorkersKey, string> = {
   nav: 'ACP Worker',
+  team: '团队',
+  teamIntro: 'Leader 在本对话里组建的成员。可改角色、模型和思考。',
+  teamEmpty: '还没有团队。Leader 调用 acp_worker 会自动入座，也可从下面添加已注册 Worker。',
+  teamAssign: '添加',
+  teamRunning: '运行中',
+  teamIdle: '空闲',
+  teamAdd: '添加',
+  teamInherit: '继承',
+  teamRole: '角色',
+  roleGeneral: '通用',
+  roleCoder: '编码',
+  roleReview: '审查',
+  roleResearch: '调研',
   title: 'ACP Worker',
   search: '搜索',
   searchPlaceholder: '搜索',
@@ -276,11 +329,18 @@ export const zh: Record<WorkersKey, string> = {
   fieldCommand: '命令',
   fieldArgs: '参数',
   argsPlaceholder: '每行一个',
-  fieldModel: '默认模型',
+  fieldModel: '模型',
+  fieldReasoning: '思考',
   modelLoading: '正在拉取模型…',
   modelRefresh: '刷新',
   modelEmpty: 'ACP 不支持获取模型列表。',
   modelAgentDefault: 'Agent 默认',
+  reasoningAgentDefault: 'Agent 默认',
+  reasoningEmpty: '当前模型不支持思考。',
+  cardThink: '思考',
+  cardTools: '工具',
+  cardPlan: '计划',
+  cardAnswer: '答复',
   fieldIdleTtl: '空闲超时（毫秒）',
   fieldPoolMax: '最多进程数',
   probe: '检测 PATH',

@@ -25,8 +25,9 @@ import { probeWorkerAcp } from './probe-acp.js'
 import {
   chatPresetToWorkerPolicy,
   parentChatPreset,
-  parseWorkerIdHint,
-  resolveRosterWorker,
+  inferTeamRole,
+  parseDispatchHint,
+  resolveDispatch,
   stripWorkerIdLine,
   type WorkerRosterEntry,
 } from '@pihuo/dsh-worker-protocol'
@@ -38,10 +39,28 @@ import {
 } from '@pihuo/dsh-worker-runtime'
 import { Config, inject, name, type Config as WorkerConfig } from './config.js'
 import { handlePihuoHttp } from './http.js'
+import { appendLive, dropLiveParent, patchLive, settleLive, startLive } from './live.js'
+import { encodeActivityTrailer, leaderTeamPrompt, selectedPreset } from './prompt-text.js'
+import { applySessionConfig, SessionConfigError } from './session-config.js'
 import { readRoster } from './store.js'
+import { readTeam, upsertTeamMember } from './team-store.js'
 
 export { Config, inject, name }
 export type { WorkerConfig }
+
+type AppliedMark = { readonly model?: string; readonly thinking?: string }
+
+const appliedMarks = new WeakMap<PooledSession, AppliedMark>()
+const applyHooks = new WeakMap<PooledSession, (applied: AppliedMark) => void>()
+
+function markApplied(session: PooledSession, applied: AppliedMark): void {
+  appliedMarks.set(session, applied)
+  applyHooks.get(session)?.(applied)
+}
+
+function appliedOf(session: PooledSession): AppliedMark | undefined {
+  return appliedMarks.get(session)
+}
 
 function isUsableDir(path: string): boolean {
   try {
@@ -137,9 +156,21 @@ class PihuoAcpProvider implements SubagentProvider {
       throw new Error(`acp-worker: ${roster.lastError}`)
     }
     const rawPrompt = promptText(request)
-    const picked = resolveRosterWorker(roster.workers, parseWorkerIdHint(rawPrompt, requestLabel(request)))
+    const parentId = parentSessionId(request)
+    const team = readTeam(parentId)
+    const hint = parseDispatchHint(rawPrompt, requestLabel(request))
+    const picked = resolveDispatch(roster.workers, team.members, hint)
     if ('issues' in picked) throw new Error(`acp-worker: ${picked.issues.join('; ')}`)
-    const user = picked.value
+    const user = picked.value.worker
+    const effectiveModel = picked.value.model
+    const effectiveReasoning = picked.value.reasoning
+    upsertTeamMember(parentId, {
+      workerId: user.id,
+      role: picked.value.member?.role
+        ?? inferTeamRole(rawPrompt, requestLabel(request))
+        ?? hint.role
+        ?? 'general',
+    })
     if (user.command === 'node' && user.args.length === 0) {
       throw new Error('acp-worker: set command/args in PiHuo Workers settings')
     }
@@ -148,7 +179,8 @@ class PihuoAcpProvider implements SubagentProvider {
     const fingerprint = fingerprintOf({
       command: user.command,
       args: user.args,
-      ...user.model === undefined ? {} : { model: user.model },
+      ...effectiveModel === undefined ? {} : { model: effectiveModel },
+      ...effectiveReasoning === undefined ? {} : { reasoning: effectiveReasoning },
       envNames: Object.keys(this.plugin.env),
     })
     const pool = this.ensurePool(user)
@@ -162,36 +194,64 @@ class PihuoAcpProvider implements SubagentProvider {
     const run = async (): Promise<void> => {
       try {
         session = await pool.acquire({
-          parentSessionId: parentSessionId(request),
+          parentSessionId: parentId,
           workerId: user.id,
           revision: String(roster.revision),
           cwd,
           fingerprint,
         }, {
-          create: () => this.spawnSession(user, cwd, request, (dead) => {
+          create: () => this.spawnSession(user, cwd, request, {
+            ...effectiveModel === undefined ? {} : { model: effectiveModel },
+            ...effectiveReasoning === undefined ? {} : { reasoning: effectiveReasoning },
+          }, (dead) => {
             pool.markBroken(dead)
           }),
         })
-        const prompt = await session.prompt(childPrompt, request.signal)
+        startLive({
+          id,
+          parentSessionId: parentId,
+          workerId: user.id,
+          title: user.title,
+          ...effectiveModel === undefined ? {} : { model: effectiveModel },
+          startedAt: Date.now(),
+        })
+        applyHooks.set(session, applied => { patchLive(id, applied) })
+        const prompt = await session.prompt(childPrompt, request.signal, (activity) => {
+          appendLive(id, activity)
+        })
+        const applied = appliedOf(session) ?? {
+          ...effectiveModel === undefined ? {} : { model: effectiveModel },
+        }
         const chatPreset = parentChatPreset(request.parent.session.events)
         const safeTitle = user.title.replace(/["\n]/g, ' ').trim()
-        const header = `[acp_worker id="${user.id}" title="${safeTitle}" chat="${chatPreset ?? 'workspace-write'}" stop="${prompt.stopReason}"]`
+        const modelAttr = applied.model === undefined ? '' : ` model="${applied.model.replace(/["\n]/g, ' ')}"`
+        const thinkAttr = applied.thinking === undefined ? '' : ` thinking="${applied.thinking.replace(/["\n]/g, ' ')}"`
+        const header = `[acp_worker id="${user.id}" title="${safeTitle}"${modelAttr}${thinkAttr} chat="${chatPreset ?? 'workspace-write'}" stop="${prompt.stopReason}"]`
         const body = prompt.output.trim()
+        const trailer = encodeActivityTrailer(prompt.activities ?? [])
+        settleLive(id, prompt.activities)
         settle({
-          output: [{ type: 'text', text: body === '' ? header : `${header}\n${body}` }],
+          output: [{
+            type: 'text',
+            text: body === '' ? `${header}${trailer}` : `${header}\n${body}${trailer}`,
+          }],
           stopReason: prompt.stopReason,
         })
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        if (!(error instanceof PoolFullError)) {
+        if (!(error instanceof PoolFullError) && !(error instanceof SessionConfigError)) {
           this.ctx.logger.warn(`acp-worker "${this.name}": ${message}`)
         }
+        settleLive(id)
         settle({
           output: [{ type: 'text', text: message }],
           stopReason: request.signal.aborted ? 'aborted' : 'error',
         })
       } finally {
-        if (session !== undefined) pool.release(session)
+        if (session !== undefined) {
+          applyHooks.delete(session)
+          pool.release(session)
+        }
       }
     }
 
@@ -211,11 +271,12 @@ class PihuoAcpProvider implements SubagentProvider {
     user: WorkerRosterEntry,
     cwd: string,
     request: ResolvedSubagentStartRequest,
+    pin: { readonly model?: string; readonly reasoning?: string },
     onDead: (session: PooledSession) => void,
   ): Promise<PooledSession> {
     const spawn = this.ctx.subprocess.spawn.bind(this.ctx.subprocess) as (spec: SubprocessSpawnSpec) => SubprocessHandle
     const env = { ...this.plugin.env }
-    if (user.model !== undefined) env.OPENCODE_MODEL = user.model
+    if (pin.model !== undefined) env.OPENCODE_MODEL = pin.model
     const child = spawn({
       argv: [user.command, ...user.args],
       cwd,
@@ -253,12 +314,14 @@ class PihuoAcpProvider implements SubagentProvider {
         }
         : {},
     })
-    const created = await driver.sessionNew()
-    if (user.model !== undefined && created.modelConfigId !== undefined) {
-      await driver.setConfigOption(created.modelConfigId, user.model).catch(() => {})
-    }
+    await driver.sessionNew()
+    let applied: AppliedMark = {}
     const session: PooledSession = {
-      prompt: (text, signal) => driver.prompt(text, signal),
+      prompt: async (text, signal, onActivity) => {
+        applied = await applySessionConfig(driver, pin)
+        markApplied(session, applied)
+        return driver.prompt(text, signal, onActivity)
+      },
       cancel: () => driver.cancel(),
       dispose: async () => {
         await driver.cancel()
@@ -287,6 +350,7 @@ export function apply(ctx: Context, config: WorkerConfig): void {
   ctx.subagents.registerProvider(provider)
   ctx.on('session/disposed', (session) => {
     if (typeof session.id === 'string' && session.id !== '') {
+      dropLiveParent(session.id)
       void provider.disposeParent(session.id)
     }
   })
@@ -294,17 +358,13 @@ export function apply(ctx: Context, config: WorkerConfig): void {
     promptCtx.systemPrompt?.section({
       name: 'pihuo-workers',
       order: 125,
-      text: () => {
+      text: (assemble) => {
+        const session = assemble.agent?.session
+        const sessionId = typeof session?.id === 'string' ? session.id : ''
+        const presetId = selectedPreset(session?.events)
         const roster = readRoster(config)
-        const ready = roster.workers.filter(row => row.enabled && row.trusted)
-        if (ready.length === 0) {
-          return 'ACP workers: none are enabled and trusted. The user must add a row in Settings → ACP Worker and check Trusted.'
-        }
-        const lines = ready.map(row => `- ${row.id} (${row.title}): ${row.command} ${row.args.join(' ')}`.trimEnd())
-        const hint = ready.length > 1
-          ? 'When more than one worker is listed, begin the acp_worker prompt with a line `workerId: <id>` then the task.'
-          : 'There is one ready worker; omit workerId unless you want to name it.'
-        return `ACP workers (acp_worker):\n${lines.join('\n')}\n${hint}`
+        const team = sessionId === '' ? { sessionId: '', members: [] } : readTeam(sessionId)
+        return leaderTeamPrompt(presetId, team, roster.workers)
       },
     })
   })

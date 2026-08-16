@@ -34,6 +34,40 @@ interface ClientCtx {
   effect(factory: () => unknown, label?: string): unknown
 }
 
+function parseMembers(body: unknown): { workerId: string; role: string; model?: string; reasoning?: string }[] {
+  const rec = typeof body === 'object' && body !== null ? body as { members?: unknown } : {}
+  if (!Array.isArray(rec.members)) return []
+  return rec.members.flatMap((row) => {
+    if (typeof row !== 'object' || row === null) return []
+    const recRow = row as { workerId?: unknown; role?: unknown; model?: unknown; reasoning?: unknown }
+    if (typeof recRow.workerId !== 'string' || typeof recRow.role !== 'string') return []
+    return [{
+      workerId: recRow.workerId,
+      role: recRow.role,
+      ...typeof recRow.model === 'string' && recRow.model !== '' ? { model: recRow.model } : {},
+      ...typeof recRow.reasoning === 'string' && recRow.reasoning !== '' ? { reasoning: recRow.reasoning } : {},
+    }]
+  })
+}
+
+function parseReasoning(raw: unknown): { configId: string; currentValue?: string; options: { value: string; name: string }[] } | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined
+  const rec = raw as { configId?: unknown; currentValue?: unknown; options?: unknown }
+  if (typeof rec.configId !== 'string' || rec.configId === '') return undefined
+  const options = Array.isArray(rec.options)
+    ? rec.options.filter((row): row is { value: string; name: string } => (
+      typeof row === 'object' && row !== null
+      && typeof (row as { value?: unknown }).value === 'string'
+      && typeof (row as { name?: unknown }).name === 'string'
+    ))
+    : []
+  return {
+    configId: rec.configId,
+    ...typeof rec.currentValue === 'string' ? { currentValue: rec.currentValue } : {},
+    options,
+  }
+}
+
 async function readJson(res: Response): Promise<unknown> {
   const text = await res.text()
   try {
@@ -99,7 +133,11 @@ function workersApi(): WorkersSectionInjected {
       const res = await fetch('/pihuo/workers/probe-acp', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ command: input.command, args: input.args }),
+        body: JSON.stringify({
+          command: input.command,
+          args: input.args,
+          ...input.model === undefined ? {} : { model: input.model },
+        }),
       })
       const body = await readJson(res)
       const rec = typeof body === 'object' && body !== null ? body as Record<string, unknown> : {}
@@ -113,23 +151,47 @@ function workersApi(): WorkersSectionInjected {
       const status = rec.status === 'ready' || rec.status === 'auth_required' || rec.status === 'incompatible' || rec.status === 'failed'
         ? rec.status
         : 'failed'
+      const reasoning = parseReasoning(rec.reasoning)
       return {
         ok: rec.ok === true,
         status,
         code: typeof rec.code === 'string' ? rec.code : 'FAILED',
         message: typeof rec.message === 'string' ? rec.message : (res.ok ? '' : JSON.stringify(body)),
         models,
+        ...reasoning === undefined ? {} : { reasoning },
         ...typeof rec.currentModelId === 'string' ? { currentModelId: rec.currentModelId } : {},
         ...typeof rec.agentName === 'string' ? { agentName: rec.agentName } : {},
         ...typeof rec.agentVersion === 'string' ? { agentVersion: rec.agentVersion } : {},
         ...typeof rec.protocolVersion === 'number' ? { protocolVersion: rec.protocolVersion } : {},
       }
     },
+    team: {
+      async load(sessionId: string) {
+        const res = await fetch(`/pihuo/team?session=${encodeURIComponent(sessionId)}`)
+        const body = await readJson(res)
+        if (!res.ok) throw new Error(JSON.stringify(body))
+        return { members: parseMembers(body) }
+      },
+      async save(sessionId: string, members) {
+        const res = await fetch('/pihuo/team', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sessionId, members }),
+        })
+        const body = await readJson(res)
+        if (!res.ok) throw new Error(JSON.stringify(body))
+        return { members: parseMembers(body) }
+      },
+    },
     async models(input) {
       const res = await fetch('/pihuo/workers/models', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ command: input.command, args: input.args }),
+        body: JSON.stringify({
+          command: input.command,
+          args: input.args,
+          ...input.model === undefined ? {} : { model: input.model },
+        }),
       })
       const body = await readJson(res)
       const rec = typeof body === 'object' && body !== null ? body as Record<string, unknown> : {}
@@ -140,9 +202,11 @@ function workersApi(): WorkersSectionInjected {
           && typeof (row as { name?: unknown }).name === 'string'
         ))
         : []
+      const reasoning = parseReasoning(rec.reasoning)
       return {
         ok: rec.ok === true,
         models,
+        ...reasoning === undefined ? {} : { reasoning },
         ...typeof rec.currentModelId === 'string' ? { currentModelId: rec.currentModelId } : {},
         ...typeof rec.error === 'string' ? { error: rec.error } : {},
       }

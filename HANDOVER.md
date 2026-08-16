@@ -18,7 +18,7 @@
 | 1 | 固定 CLI `pihuo-acp` + `acp_worker` 工具卡 + 单 Worker 设置页 | **完成**（`settings.section#pihuo-workers` + `GET/PUT /pihuo/workers` + `$DSH_HOME/pihuo/workers.json`） |
 | 2 | 会话池、复用键、`permission: ask` → `ctx.approval` | **完成**（进程内池；取消不杀进程；子进程退出标 broken） |
 | 3 | Registry + 多行名册 | **完成**（v2 名册 + 官方 Registry **只展示**：CDN `registry.json` → 填 command/args；LKG；捆绑回退；不代装、不 `npx`） |
-| 4 | `leader-persona`、dock、可选 ephemeral 流 | **预设 `pihuo-leader` 已装；dock / ephemeral 未开始** |
+| 4 | `leader-persona`、dock、可选 ephemeral 流 | **预设已收成纯调度；Header 是会话 Team；卡片 live Think/Tool（HTTP 轮询，无新 session 事件）** |
 | 5 | `worker-dispatch`、更多后端 | 未开始 |
 
 ## 边界（不要踩）
@@ -59,6 +59,10 @@ packages/
 - 三期：v2 名册、`trusted`、PATH probe、`workerId:` 路由。
 - 官方 Registry 只展示层：Host `GET /pihuo/catalog` 拉 `https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json`，按平台 binary 基名 → `npx -y pkg` → `uvx` 投影；成功写 `$DSH_HOME/pihuo/registry-lkg.json`；失败用 LKG；再失败用捆绑 OpenCode / 自定义。设置页展示来源、版本、发行方式。不下载 archive，不代跑 `npx`。
 - `pihuo-leader` 预设仍是装 `acp_worker` 的唯一入口。官方 launcher 会盖掉额外 `roots`，预设继续拷进 `$DSH_HOME/.agent-presets`。
+- Leader 预设关掉 bash / fs / grep / jobs / skill / goal / web。系统提示按会话列 Team；Header 未排座时仍列出已注册 Worker，组队就是 `acp_worker`，不挡在 Header 后面。
+- ACP 思考：`thought_level` / `reasoning_effort` / `effort`。现场 `configOptions` 为准；无效 pin 丢弃。
+- 卡片标题 `name · 模型 · 思考`，16px 字母图标（hover 换 chevron）。展开体按 ACP 到达顺序排 Think/Tool/答复，不拆成两栏。
+- Header 是「团队」：展示本会话已入座成员（Leader 调 `acp_worker` 会自动入座），可改角色/模型/思考。写入 `$DSH_HOME/pihuo/teams/<sessionId>.json`。
 
 ## 三期（名册 + 捆绑目录）
 

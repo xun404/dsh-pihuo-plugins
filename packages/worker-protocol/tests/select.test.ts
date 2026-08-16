@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { WorkerRosterEntry } from '../src/config.ts'
-import { parseWorkerIdHint, resolveRosterWorker, stripWorkerIdLine } from '../src/select.ts'
+import { parseDispatchHint, parseWorkerIdHint, resolveDispatch, resolveRosterWorker, stripWorkerIdLine } from '../src/select.ts'
 
 function row(over: Partial<WorkerRosterEntry> & { id: string }): WorkerRosterEntry {
   return {
@@ -19,15 +19,89 @@ function row(over: Partial<WorkerRosterEntry> & { id: string }): WorkerRosterEnt
 describe('parseWorkerIdHint', () => {
   it('reads the first prompt line and a legal label', () => {
     assert.equal(parseWorkerIdHint('workerId: opencode\ndo the thing'), 'opencode')
-    assert.equal(parseWorkerIdHint('hello', 'coder'), 'coder')
+    assert.equal(parseWorkerIdHint('hello', 'opencode'), 'opencode')
     assert.equal(parseWorkerIdHint('hello', 'Not An Id'), undefined)
+  })
+})
+
+describe('parseDispatchHint', () => {
+  it('reads workerId and role lines', () => {
+    assert.deepEqual(parseDispatchHint('role: coder\nworkerId: opencode\ndo it'), {
+      workerId: 'opencode',
+      role: 'coder',
+    })
+    assert.deepEqual(parseDispatchHint('role: review\ndo it'), { role: 'review' })
+  })
+
+  it('reads a Chinese 角色 line and a role label', () => {
+    assert.deepEqual(parseDispatchHint('角色：编码\n做这个'), { role: 'coder' })
+    assert.deepEqual(parseDispatchHint('do it', 'coder'), { role: 'coder' })
   })
 })
 
 describe('stripWorkerIdLine', () => {
   it('drops only the hint line', () => {
     assert.equal(stripWorkerIdLine('workerId: opencode\ndo the thing'), 'do the thing')
+    assert.equal(stripWorkerIdLine('role: coder\ndo the thing'), 'do the thing')
     assert.equal(stripWorkerIdLine('do the thing'), 'do the thing')
+  })
+})
+
+describe('resolveDispatch', () => {
+  const roster = [
+    row({ id: 'opencode' }),
+    row({ id: 'codex' }),
+  ]
+
+  it('resolves a role through the team and inherits overrides', () => {
+    const hit = resolveDispatch(
+      roster,
+      [{ workerId: 'opencode', role: 'coder', reasoning: 'high' }],
+      { role: 'coder' },
+    )
+    assert.ok('value' in hit)
+    assert.equal(hit.value.worker.id, 'opencode')
+    assert.equal(hit.value.reasoning, 'high')
+  })
+
+  it('uses the only team member without a hint', () => {
+    const hit = resolveDispatch(roster, [{ workerId: 'codex', role: 'review' }], {})
+    assert.ok('value' in hit)
+    assert.equal(hit.value.worker.id, 'codex')
+  })
+
+  it('requires a hint when several members are seated', () => {
+    const hit = resolveDispatch(
+      roster,
+      [
+        { workerId: 'opencode', role: 'coder' },
+        { workerId: 'codex', role: 'review' },
+      ],
+      {},
+    )
+    assert.ok('issues' in hit)
+  })
+
+  it('requires workerId when the same role is bound to several workers', () => {
+    const hit = resolveDispatch(
+      roster,
+      [
+        { workerId: 'opencode', role: 'coder' },
+        { workerId: 'codex', role: 'coder' },
+      ],
+      { role: 'coder' },
+    )
+    assert.ok('issues' in hit)
+    const named = resolveDispatch(
+      roster,
+      [
+        { workerId: 'opencode', role: 'coder' },
+        { workerId: 'codex', role: 'coder' },
+      ],
+      { workerId: 'codex' },
+    )
+    assert.ok('value' in named)
+    assert.equal(named.value.worker.id, 'codex')
   })
 })
 

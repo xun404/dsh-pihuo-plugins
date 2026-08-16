@@ -45,6 +45,12 @@ export interface WorkerUserConfig {
    * `OPENCODE_MODEL`. Digested into the reuse fingerprint; not a secret.
    */
   readonly model?: string
+  /**
+   * Default ACP thought-level value (`session/set_config_option`).
+   * Agent-native string (Codex `reasoning_effort`, Claude `effort`).
+   * Omitted means the agent default. Digested into the reuse fingerprint.
+   */
+  readonly reasoning?: string
   /** Idle eviction bound in milliseconds. Default {@link DEFAULT_IDLE_TTL_MS}. */
   readonly idleTtlMs: number
   /**
@@ -141,6 +147,9 @@ export function parseWorkerUserConfig(raw: unknown): { value: WorkerUserConfig }
   if (poolMaxRaw < 1) issues.push('poolMax must be a positive integer')
   if (issues.length > 0) return { issues }
   const model = typeof obj.model === 'string' && obj.model.trim() !== '' ? obj.model.trim() : undefined
+  const reasoning = typeof obj.reasoning === 'string' && obj.reasoning.trim() !== ''
+    ? obj.reasoning.trim()
+    : undefined
   const value: WorkerUserConfig = {
     enabled,
     command,
@@ -148,6 +157,7 @@ export function parseWorkerUserConfig(raw: unknown): { value: WorkerUserConfig }
     idleTtlMs,
     poolMax: Math.min(MAX_POOL_MAX, poolMaxRaw),
     ...model === undefined ? {} : { model },
+    ...reasoning === undefined ? {} : { reasoning },
   }
   return { value }
 }

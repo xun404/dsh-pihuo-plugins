@@ -1,4 +1,5 @@
-# The `pihuo-leader` agent preset: standard coding tools plus `acp_worker`.
+# The `pihuo-leader` agent preset: `acp_worker` coordinator.
+# Local shell and filesystem tools stay off.
 #
 # Host plane still owns `pihuo-acp` (the SubagentProvider) and the UI card.
 # This file only exposes the model-facing tool, so other presets do not see it.
@@ -28,15 +29,17 @@
   name: '@deepseek-ai/dsh-persona'
   config:
     text: >-
-      You are PiHuo Leader, a coordinating coding agent powered by the {{model}} model. Your working directory is {{cwd}}.
+      You are PiHuo Leader, a coordinating agent powered by the {{model}} model. Your working directory is {{cwd}}.
 
-      You have a worker team. The only way to add a teammate or delegate a specialist job is the acp_worker tool. Each call starts one ACP worker. That is how you 组建团队 / form a team.
+      You have no filesystem, shell, search, or web tools. Do not try to read, write, grep, or run commands. Do not open workers.json or any other local config file.
 
-      Ready workers are listed in the PiHuo workers system section. If more than one is ready, begin the acp_worker prompt with a line `workerId: <id>` and then the task. If only one is ready, omit workerId.
+      The only way to inspect or change the workspace, or to form a team, is the acp_worker tool. Each call starts one registered worker as one teammate.
 
-      Prefer doing small inspections yourself. For implementation, research, a different toolchain, or any role on the team, call acp_worker. Give that tool a self-contained prompt (role, goal, constraints, deliverable): the worker cannot see this conversation. Start independent workers together in one assistant message.
+      If the Team system section lists seated members (role → worker), use those. If it lists registered workers and says the Team header is empty, you still form the team yourself: infer roles from the user request and start those acp_worker calls. When more than one worker is listed, begin the prompt with `workerId: <id>` then the task. If only one is listed, omit workerId.
 
-      When the user asks to form a team, infer roles from the request and start those acp_worker calls. Ask clarifying questions only when there is no task at all.
+      Do not ask the user to click the Team header before you can work. The header is an optional pin the user may set; it is not a gate. Do not invent a worker that is not listed.
+
+      Each acp_worker prompt must be self-contained (role, goal, constraints, deliverable): the worker cannot see this conversation. Start independent members together in one assistant message.
 
       Never invent a worker result. Report only what acp_worker returned.
 
@@ -56,11 +59,11 @@
 # host-plane too.
 - id: tool-bash
   name: '@deepseek-ai/dsh-tool-bash'
-  disabled: !!js process.platform === 'win32'
+  disabled: true
 
 - id: tool-pwsh
   name: '@deepseek-ai/dsh-tool-pwsh'
-  disabled: !!js process.platform !== 'win32'
+  disabled: true
 
 # ── filesystem ──────────────────────────────────────────────────────────────
 
@@ -68,9 +71,11 @@
 # they need no realm. The `fs` service and its policy stay in the host.
 - id: tool-fs
   name: '@deepseek-ai/dsh-tool-fs'
+  disabled: true
 
 - id: tool-fs-search
   name: '@deepseek-ai/dsh-tool-fs-search'
+  disabled: true
   config:
     sampleOverCapGlobResults: false
 
@@ -85,6 +90,7 @@
 # chooses is whether its agent can collect and stop background work at all.
 - id: tool-jobs
   name: '@deepseek-ai/dsh-tool-jobs'
+  disabled: true
 
 # ── skills ──────────────────────────────────────────────────────────────────
 
@@ -95,9 +101,11 @@
 # carries whatever the deployment registered globally (repository plugins).
 - id: skill-filesystem
   name: '@deepseek-ai/dsh-skill-filesystem'
+  disabled: true
 
 - id: tool-skill
   name: '@deepseek-ai/dsh-tool-skill'
+  disabled: true
 
 # ── goals ───────────────────────────────────────────────────────────────────
 
@@ -109,6 +117,7 @@
 # session. What a preset chooses is whether its agent can call the goal tool.
 - id: tool-goal
   name: '@deepseek-ai/dsh-tool-goal'
+  disabled: true
 
 # ── plan mode ───────────────────────────────────────────────────────────────
 
@@ -277,6 +286,7 @@
 # the model-facing tool is per-session.
 - id: tool-web
   name: '@deepseek-ai/dsh-tool-web'
+  disabled: true
   config:
     fetch: false
     searchTimeoutMs: 60000

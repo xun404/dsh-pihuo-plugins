@@ -24,6 +24,7 @@ interface WorkerDraft {
   command: string
   argsText: string
   model: string
+  reasoning: string
   idleTtlMs: string
   poolMax: string
   packageSpec: string
@@ -40,6 +41,7 @@ interface WorkerRow {
   readonly command?: string
   readonly args?: readonly string[]
   readonly model?: string
+  readonly reasoning?: string
   readonly idleTtlMs?: number
   readonly poolMax?: number
   readonly packageSpec?: string
@@ -77,16 +79,35 @@ interface RosterPayload {
   readonly status?: { readonly poolSize?: number }
 }
 
+export interface TeamMemberDto {
+  readonly workerId: string
+  readonly role: string
+  readonly model?: string
+  readonly reasoning?: string
+}
+
 /** Inject face. The `t` seat arrives from `locale: pihuo.workers` on register. */
 export interface WorkerModelOption {
   readonly modelId: string
   readonly name: string
 }
 
+export interface ReasoningOption {
+  readonly value: string
+  readonly name: string
+}
+
+export interface ReasoningSelector {
+  readonly configId: string
+  readonly currentValue?: string
+  readonly options: readonly ReasoningOption[]
+}
+
 export interface ModelsPayload {
   readonly ok: boolean
   readonly models: readonly WorkerModelOption[]
   readonly currentModelId?: string
+  readonly reasoning?: ReasoningSelector
   readonly error?: string
 }
 
@@ -97,6 +118,7 @@ export interface AcpProbePayload {
   readonly message: string
   readonly models: readonly WorkerModelOption[]
   readonly currentModelId?: string
+  readonly reasoning?: ReasoningSelector
   readonly agentName?: string
   readonly agentVersion?: string
   readonly protocolVersion?: number
@@ -111,8 +133,12 @@ export interface WorkersSectionInjected {
     workerId?: string
     distribution?: 'npx' | 'uvx' | 'binary'
   }): Promise<{ found: boolean; path?: string }>
-  models(input: { command: string; args: readonly string[] }): Promise<ModelsPayload>
-  probeAcp(input: { command: string; args: readonly string[] }): Promise<AcpProbePayload>
+  models(input: { command: string; args: readonly string[]; model?: string }): Promise<ModelsPayload>
+  probeAcp(input: { command: string; args: readonly string[]; model?: string }): Promise<AcpProbePayload>
+  team: {
+    load(sessionId: string): Promise<{ members: readonly TeamMemberDto[] }>
+    save(sessionId: string, members: readonly TeamMemberDto[]): Promise<{ members: readonly TeamMemberDto[] }>
+  }
   startInstall(input: {
     workerId: string
     packageSpec: string
@@ -246,6 +272,7 @@ function emptyDraft(id: string): WorkerDraft {
     command: '',
     argsText: '',
     model: '',
+    reasoning: '',
     idleTtlMs: '300000',
     poolMax: '4',
     packageSpec: '',
@@ -263,6 +290,7 @@ function fromRow(row: WorkerRow): WorkerDraft {
     command: row.command ?? '',
     argsText: (row.args ?? []).join('\n'),
     model: row.model ?? '',
+    reasoning: row.reasoning ?? '',
     idleTtlMs: String(row.idleTtlMs ?? 300000),
     poolMax: String(row.poolMax ?? 4),
     packageSpec: row.packageSpec ?? '',
@@ -280,6 +308,7 @@ function toRow(draft: WorkerDraft): Record<string, unknown> {
     command: draft.command.trim(),
     args: draft.argsText.split('\n').map(line => line.trim()).filter(line => line !== ''),
     ...draft.model.trim() === '' ? {} : { model: draft.model.trim() },
+    ...draft.reasoning.trim() === '' ? {} : { reasoning: draft.reasoning.trim() },
     ...draft.catalogId === '' ? {} : { catalogId: draft.catalogId },
     idleTtlMs: Number(draft.idleTtlMs),
     poolMax: Number(draft.poolMax),
@@ -432,8 +461,11 @@ export function WorkersSection(props: WorkersSectionProps): ReactNode {
   draftRef.current = draft
   const [refreshing, setRefreshing] = useState(false)
   const [modelOptions, setModelOptions] = useState<readonly WorkerModelOption[]>([])
+  const [reasoningOptions, setReasoningOptions] = useState<readonly ReasoningOption[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
   const [modelsNote, setModelsNote] = useState<string | null>(null)
+  const [reasoningNote, setReasoningNote] = useState<string | null>(null)
+  const [reasoningLive, setReasoningLive] = useState('')
   const pageRef = useRef<HTMLDivElement | null>(null)
   const installLogRef = useRef<HTMLPreElement | null>(null)
 
@@ -486,24 +518,49 @@ export function WorkersSection(props: WorkersSectionProps): ReactNode {
     }
   }, [props.load, props.catalog])
 
+  const applyReasoning = (selector: ReasoningSelector | undefined, keepValue: string): void => {
+    const options = selector?.options ?? []
+    setReasoningOptions(options)
+    const live = selector?.currentValue
+    const liveOk = live !== undefined && live !== '' && options.some(row => row.value === live)
+    setReasoningLive(liveOk ? (options.find(row => row.value === live)?.name ?? live) : '')
+    if (options.length === 0) {
+      setReasoningNote(t('reasoningEmpty'))
+      setDraft(current => ({ ...current, reasoning: '' }))
+      return
+    }
+    setReasoningNote(null)
+    const next = keepValue !== '' && options.some(row => row.value === keepValue) ? keepValue : ''
+    setDraft(current => ({ ...current, reasoning: next }))
+  }
+
   const loadModels = (draftToLoad: WorkerDraft): void => {
     const command = draftToLoad.command.trim()
     const args = draftToLoad.argsText.split('\n').map(line => line.trim()).filter(line => line !== '')
     if (command === '') {
       setModelOptions([])
+      setReasoningOptions([])
+      setReasoningLive('')
       setModelsNote(null)
+      setReasoningNote(null)
       setModelsLoading(false)
       return
     }
     setModelsLoading(true)
     setModelsNote(null)
-    void props.probeAcp({ command, args }).then((payload) => {
+    void props.probeAcp({
+      command,
+      args,
+      ...draftToLoad.model.trim() === '' ? {} : { model: draftToLoad.model.trim() },
+    }).then((payload) => {
       setModelOptions(payload.models)
       setModelsNote(payload.ok && payload.models.length === 0 ? t('modelEmpty') : null)
+      applyReasoning(payload.reasoning, draftToLoad.reasoning)
       setDraft(current => ({ ...current, check: checkFromProbe(payload) }))
       setModelsLoading(false)
     }, (error: unknown) => {
       setModelOptions([])
+      setReasoningOptions([])
       setModelsNote(error instanceof Error ? error.message : t('modelEmpty'))
       setModelsLoading(false)
     })
@@ -535,9 +592,15 @@ export function WorkersSection(props: WorkersSectionProps): ReactNode {
     }
     const command = nextDraft.command.trim()
     const args = nextDraft.argsText.split('\n').map(line => line.trim()).filter(line => line !== '')
-    const finish = (trusted: boolean, note: string, check: WorkerCheckView, kind: 'ok' | 'warn'): void => {
+    const finish = (
+      trusted: boolean,
+      note: string,
+      check: WorkerCheckView,
+      kind: 'ok' | 'warn',
+      draft: WorkerDraft = nextDraft,
+    ): void => {
       const next = [...workers]
-      const row = toRow({ ...nextDraft, trusted, check }) as WorkerRow
+      const row = toRow({ ...draft, trusted, check }) as WorkerRow
       if (editingIndex === 'new' || editingIndex === null) next.push(row)
       else next[editingIndex] = row
       persist(next, note, () => {
@@ -554,16 +617,23 @@ export function WorkersSection(props: WorkersSectionProps): ReactNode {
     setBusy(true)
     setMessage(t('saveProbing'))
     setMessageKind('ok')
-    void props.probeAcp({ command, args }).then((probe) => {
+    void props.probeAcp({
+      command,
+      args,
+      ...nextDraft.model.trim() === '' ? {} : { model: nextDraft.model.trim() },
+    }).then((probe) => {
       setModelOptions(probe.models)
       const check = checkFromProbe(probe)
+      const options = probe.reasoning?.options ?? []
+      const pinned = nextDraft.reasoning.trim()
+      const reasoning = pinned !== '' && options.some(row => row.value === pinned) ? pinned : ''
+      const saved = { ...nextDraft, reasoning }
       if (probe.ok) {
-        finish(true, t('probeReady'), check, 'ok')
+        finish(true, t('probeReady'), check, 'ok', saved)
         return
       }
-      finish(false, probeReason(probe, t), check, 'warn')
-    }, (error: unknown) => {
-      const reason = error instanceof Error ? error.message : String(error)
+      finish(false, probeReason(probe, t), check, 'warn', saved)
+    }, () => {
       finish(false, t('checkFailed'), { kind: 'failed' }, 'warn')
     })
   }
@@ -789,7 +859,12 @@ export function WorkersSection(props: WorkersSectionProps): ReactNode {
             value: draft.model,
             disabled: modelsLoading,
             'aria-label': t('fieldModel'),
-            onChange: (event: { target: { value: string } }) => { setDraft({ ...draft, model: event.target.value }) },
+            onChange: (event: { target: { value: string } }) => {
+              const model = event.target.value
+              const next = { ...draft, model, reasoning: '' }
+              setDraft(next)
+              if (model !== '') loadModels(next)
+            },
           },
           createElement('option', { value: '' }, t('modelAgentDefault')),
           ...modelOptions.map(opt => createElement('option', {
@@ -812,6 +887,24 @@ export function WorkersSection(props: WorkersSectionProps): ReactNode {
         onClick: () => { loadModels(draft) },
       }, createElement(IconRefreshOutline16, { size: 16 }), modelsLoading ? t('modelLoading') : t('modelRefresh')),
     ), modelsNote ?? undefined),
+    field(t('fieldReasoning'), createElement(
+      'select',
+      {
+        className: styles.fieldInput,
+        value: reasoningOptions.some(opt => opt.value === draft.reasoning) ? draft.reasoning : '',
+        disabled: modelsLoading || reasoningOptions.length === 0,
+        'aria-label': t('fieldReasoning'),
+        onChange: (event: { target: { value: string } }) => {
+          setDraft({ ...draft, reasoning: event.target.value })
+        },
+      },
+      createElement('option', { value: '' },
+        reasoningLive === '' ? t('reasoningAgentDefault') : `${t('reasoningAgentDefault')} · ${reasoningLive}`),
+      ...reasoningOptions.map(opt => createElement('option', {
+        key: opt.value,
+        value: opt.value,
+      }, opt.name === opt.value ? opt.value : opt.name)),
+    ), reasoningNote ?? undefined),
     createElement('button', {
       type: 'button',
       className: styles.advancedBtn,

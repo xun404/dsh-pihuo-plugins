@@ -4,14 +4,18 @@
  * to `poolMax` children; a full pool evicts the least-recent idle entry or
  * fails loud. Nothing is persisted across process restarts.
  */
-import type { WorkerPromptResult, WorkerReuseKey } from '@pihuo/dsh-worker-protocol'
+import type { WorkerActivity, WorkerPromptResult, WorkerReuseKey } from '@pihuo/dsh-worker-protocol'
 import { reuseKeyId } from './fingerprint.js'
 
 export type PoolEntryState = 'starting' | 'idle' | 'running' | 'closing' | 'broken'
 
 /** One live ACP (or fake) session the pool can prompt and later dispose. */
 export interface PooledSession {
-  prompt(text: string, signal?: AbortSignal): Promise<WorkerPromptResult>
+  prompt(
+    text: string,
+    signal?: AbortSignal,
+    onActivity?: (activity: WorkerActivity) => void,
+  ): Promise<WorkerPromptResult>
   cancel(): Promise<void>
   dispose(): Promise<void>
 }

@@ -12,4 +12,11 @@ describe('pihuo.workers dictionaries', () => {
       assert.notEqual(value.trim(), '', key)
     }
   })
+
+  it('uses short model and thinking labels', () => {
+    assert.equal(zh.fieldModel, '模型')
+    assert.equal(zh.fieldReasoning, '思考')
+    assert.equal(en.fieldModel, 'Model')
+    assert.equal(en.fieldReasoning, 'Thinking')
+  })
 })

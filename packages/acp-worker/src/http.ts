@@ -14,6 +14,8 @@ import { readRoster, writeRoster } from './store.js'
 import type { ListModelsInput, ListModelsResult } from './list-models.js'
 import type { AcpProbeResult, ProbeAcpInput } from './probe-acp.js'
 import { getInstallJob, locateWorkerCommand, startInstallJob, validatePackageSpec } from './install.js'
+import { listLive, type LiveRun } from './live.js'
+import { readTeam, writeTeam } from './team-store.js'
 
 export interface WorkersHttpStatus {
   readonly poolSize: number
@@ -111,7 +113,12 @@ export async function handlePihuoHttp(
     const args = Array.isArray(rec.args)
       ? rec.args.filter((item): item is string => typeof item === 'string')
       : []
-    send(res, 200, await listModels({ command, args }))
+    const model = typeof rec.model === 'string' ? rec.model : undefined
+    send(res, 200, await listModels({
+      command,
+      args,
+      ...model === undefined || model === '' ? {} : { model },
+    }))
     return
   }
   if (path === '/pihuo/workers/probe-acp' && method === 'POST') {
@@ -131,7 +138,12 @@ export async function handlePihuoHttp(
     const args = Array.isArray(rec.args)
       ? rec.args.filter((item): item is string => typeof item === 'string')
       : []
-    send(res, 200, await probeAcp({ command, args }))
+    const model = typeof rec.model === 'string' ? rec.model : undefined
+    send(res, 200, await probeAcp({
+      command,
+      args,
+      ...model === undefined || model === '' ? {} : { model },
+    }))
     return
   }
   if (path === '/pihuo/workers/install' && method === 'POST') {
@@ -163,6 +175,45 @@ export async function handlePihuoHttp(
       return
     }
     send(res, 200, job)
+    return
+  }
+  if (path === '/pihuo/workers/live' && method === 'GET') {
+    const url = new URL(req.url ?? '/', 'http://127.0.0.1')
+    const parent = url.searchParams.get('parent') ?? ''
+    const runs: LiveRun[] = parent === '' ? [] : listLive(parent)
+    send(res, 200, { runs })
+    return
+  }
+  if (path === '/pihuo/team' && method === 'GET') {
+    const url = new URL(req.url ?? '/', 'http://127.0.0.1')
+    const sessionId = url.searchParams.get('session') ?? ''
+    if (sessionId === '') {
+      send(res, 400, { issues: ['session is required'] })
+      return
+    }
+    send(res, 200, readTeam(sessionId))
+    return
+  }
+  if (path === '/pihuo/team' && method === 'PUT') {
+    let raw: unknown
+    try {
+      raw = JSON.parse(await readBody(req)) as unknown
+    } catch {
+      send(res, 400, { issues: ['body must be JSON'] })
+      return
+    }
+    const rec = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {}
+    const sessionId = typeof rec.sessionId === 'string' ? rec.sessionId : ''
+    if (sessionId === '') {
+      send(res, 400, { issues: ['sessionId is required'] })
+      return
+    }
+    const saved = writeTeam(sessionId, rec)
+    if (saved.lastError !== undefined) {
+      send(res, 400, { issues: [saved.lastError] })
+      return
+    }
+    send(res, 200, saved)
     return
   }
   if (path !== '/pihuo/workers') {

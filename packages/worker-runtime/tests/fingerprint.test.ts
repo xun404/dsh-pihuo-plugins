@@ -14,6 +14,12 @@ describe('fingerprintOf', () => {
     const b = fingerprintOf({ command: 'node', args: ['y'], envNames: [] })
     assert.notEqual(a, b)
   })
+
+  it('changes when reasoning changes', () => {
+    const a = fingerprintOf({ command: 'node', args: ['x'], envNames: [], reasoning: 'low' })
+    const b = fingerprintOf({ command: 'node', args: ['x'], envNames: [], reasoning: 'high' })
+    assert.notEqual(a, b)
+  })
 })
 
 describe('reuseKeyId', () => {

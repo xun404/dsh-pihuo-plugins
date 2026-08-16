@@ -30,6 +30,8 @@ describe('pihuo-presets', () => {
       const yml = readFileSync(join(dir, 'agent.cordis.yml'), 'utf8')
       assert.match(yml, /toolName: acp_worker/)
       assert.match(yml, /provider: pihuo-acp/)
+      assert.match(yml, /id: tool-bash[\s\S]*disabled: true/)
+      assert.match(yml, /id: tool-fs[\s\S]*disabled: true/)
       assert.match(readFileSync(join(dir, 'preset.yml'), 'utf8'), /PiHuo Leader/)
       assert.equal(packagedPresetRoot().endsWith('presets'), true)
     } finally {

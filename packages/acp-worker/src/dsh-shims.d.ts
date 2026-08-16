@@ -35,7 +35,17 @@ declare module '@deepseek-ai/cordis' {
       section(spec: {
         readonly name: string
         readonly order: number
-        text: string | (() => string)
+        text: string | ((context: {
+          agent?: {
+            session?: {
+              id?: string
+              events?: ReadonlyArray<{
+                readonly type?: string
+                readonly data?: { readonly agentPreset?: unknown }
+              }>
+            }
+          }
+        }) => string)
       }): () => void
     }
   }
@@ -65,7 +75,7 @@ declare module '@deepseek-ai/dsh-subagent' {
         readonly header: { readonly cwd?: string }
         readonly events?: ReadonlyArray<{
           readonly type?: string
-          readonly data?: { readonly preset?: unknown }
+          readonly data?: { readonly preset?: unknown; readonly agentPreset?: unknown }
         }>
       }
     }

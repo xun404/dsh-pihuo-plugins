@@ -43,6 +43,41 @@ function mockRes(): ServerResponse & { status: number; body: string } {
 }
 
 describe('handleWorkersHttp', () => {
+  it('GET /pihuo/workers/live returns an empty board', async () => {
+    const res = mockRes()
+    await handleWorkersHttp(mockReq('GET', undefined, '/pihuo/workers/live?parent=s1'), res, plugin, () => ({ poolSize: 0 }))
+    assert.equal(res.status, 200)
+    const body = JSON.parse(res.body) as { runs: unknown[] }
+    assert.deepEqual(body.runs, [])
+  })
+
+  it('PUT /pihuo/team persists members', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pihuo-http-team-'))
+    const previous = process.env.DSH_HOME
+    process.env.DSH_HOME = dir
+    try {
+      const put = mockRes()
+      await handleWorkersHttp(
+        mockReq('PUT', JSON.stringify({
+          sessionId: 'chat-1',
+          members: [{ workerId: 'opencode', role: 'coder' }],
+        }), '/pihuo/team'),
+        put,
+        plugin,
+        () => ({ poolSize: 0 }),
+      )
+      assert.equal(put.status, 200)
+      const get = mockRes()
+      await handleWorkersHttp(mockReq('GET', undefined, '/pihuo/team?session=chat-1'), get, plugin, () => ({ poolSize: 0 }))
+      const body = JSON.parse(get.body) as { members: Array<{ role: string }> }
+      assert.equal(body.members[0]?.role, 'coder')
+    } finally {
+      if (previous === undefined) delete process.env.DSH_HOME
+      else process.env.DSH_HOME = previous
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   it('GET returns plugin defaults when the file is missing', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'pihuo-http-'))
     const previous = process.env.DSH_HOME

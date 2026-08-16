@@ -11,6 +11,7 @@ export interface FingerprintInput {
   readonly command: string
   readonly args: readonly string[]
   readonly model?: string
+  readonly reasoning?: string
   /** Environment *names* that affect execution, sorted at digest time. */
   readonly envNames: readonly string[]
 }
@@ -24,6 +25,7 @@ export function fingerprintOf(input: FingerprintInput): string {
     command: input.command,
     args: input.args,
     model: input.model ?? '',
+    reasoning: input.reasoning ?? '',
     envNames: [...input.envNames].sort(),
   })
   return createHash('sha256').update(payload).digest('hex')

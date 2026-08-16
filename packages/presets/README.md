@@ -8,7 +8,7 @@ supported out-of-tree path.
 
 | id | Picker name |
 |---|---|
-| `pihuo-leader` | PiHuo Leader — standard tools plus `acp_worker` |
+| `pihuo-leader` | PiHuo Leader — `acp_worker` coordinator (no bash/fs) |
 
 The `pihuo-acp` provider stays on the host. Only this preset registers the
 `acp_worker` tool. New sessions must pick **PiHuo Leader** (or set it as the

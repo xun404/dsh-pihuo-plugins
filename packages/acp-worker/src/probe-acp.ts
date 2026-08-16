@@ -5,7 +5,13 @@
 import { isAbsolute, resolve } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SubprocessHandle, SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
-import { AcpProtocolError, AcpSessionDriver, type WorkerModelOption } from '@pihuo/dsh-acp-protocol'
+import {
+  AcpProtocolError,
+  AcpSessionDriver,
+  extractReasoningSelector,
+  type WorkerModelOption,
+  type WorkerReasoningSelector,
+} from '@pihuo/dsh-acp-protocol'
 import { binaryNameFromPackageSpec, packageSpecFromArgs } from '@pihuo/dsh-worker-protocol'
 import type { Config as PluginConfig } from './config.js'
 import { probeCommand } from './probe.js'
@@ -13,6 +19,8 @@ import { probeCommand } from './probe.js'
 export interface ProbeAcpInput {
   readonly command: string
   readonly args?: readonly string[]
+  /** When set, pin this model before reading thought-level. */
+  readonly model?: string
 }
 
 export type AcpProbeStatus = 'ready' | 'auth_required' | 'incompatible' | 'failed'
@@ -24,6 +32,7 @@ export interface AcpProbeResult {
   readonly message: string
   readonly models: readonly WorkerModelOption[]
   readonly currentModelId?: string
+  readonly reasoning?: WorkerReasoningSelector
   readonly agentName?: string
   readonly agentVersion?: string
   readonly protocolVersion?: number
@@ -148,6 +157,7 @@ function resultOf(
     message: parts.message,
     models: parts.models ?? [],
     ...parts.currentModelId === undefined ? {} : { currentModelId: parts.currentModelId },
+    ...parts.reasoning === undefined ? {} : { reasoning: parts.reasoning },
     ...parts.agentName === undefined ? {} : { agentName: parts.agentName },
     ...parts.agentVersion === undefined ? {} : { agentVersion: parts.agentVersion },
     ...parts.protocolVersion === undefined ? {} : { protocolVersion: parts.protocolVersion },
@@ -215,6 +225,10 @@ export async function probeWorkerAcp(
         stdout: child.stdout!,
       }), 'ACP initialize')
       const listed = await withTimeout(driver.sessionNew(), 'ACP session/new')
+      if (input.model !== undefined && input.model !== '' && listed.modelConfigId !== undefined) {
+        await withTimeout(driver.setConfigOption(listed.modelConfigId, input.model), 'ACP set model')
+      }
+      const reasoning = extractReasoningSelector(driver.configOptions)
       const info = driver.agentInfo
       return resultOf({
         ok: true,
@@ -222,7 +236,10 @@ export async function probeWorkerAcp(
         code: 'SESSION_READY',
         message: 'Initialize and session/new succeeded',
         models: [...listed.models],
-        ...listed.currentModelId === undefined ? {} : { currentModelId: listed.currentModelId },
+        ...listed.currentModelId === undefined && input.model === undefined
+          ? {}
+          : { currentModelId: input.model ?? listed.currentModelId },
+        ...reasoning === undefined ? {} : { reasoning },
         ...info?.agentName === undefined ? {} : { agentName: info.agentName },
         ...info?.agentVersion === undefined ? {} : { agentVersion: info.agentVersion },
         ...info === undefined ? {} : { protocolVersion: info.protocolVersion },

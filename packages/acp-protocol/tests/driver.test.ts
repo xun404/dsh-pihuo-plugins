@@ -40,6 +40,20 @@ describe('AcpSessionDriver', () => {
     })
   })
 
+  it('collects thought and tool updates during prompt', async () => {
+    const seen: string[] = []
+    await withDriver({ MOCK_TEXT: 'done', MOCK_THINK: 'hmm', MOCK_TOOL: 'read' }, async (drv) => {
+      const result = await drv.prompt('go', undefined, (activity) => {
+        seen.push(`${activity.kind}:${activity.text}`)
+      })
+      assert.equal(result.ok, true)
+      assert.equal(result.output, 'done')
+      assert.ok(result.activities.some(row => row.kind === 'thought' && row.text === 'hmm'))
+      assert.ok(result.activities.some(row => row.kind === 'tool' && row.toolTitle === 'read'))
+      assert.ok(seen.some(row => row.startsWith('thought:')))
+    })
+  })
+
   it('auto-allows a permission request under policy allow', async () => {
     await withDriver({ MOCK_TEXT: 'after-perm', MOCK_PERMISSION: '1' }, async (drv) => {
       const result = await drv.prompt('go')

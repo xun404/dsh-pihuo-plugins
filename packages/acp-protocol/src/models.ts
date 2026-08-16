@@ -95,14 +95,24 @@ function readConfigOption(raw: unknown): AcpConfigOption | undefined {
 }
 
 /**
+ * Parse raw ACP `configOptions` into the local option shape.
+ * Unknown rows are dropped. Used by model and thought-level extractors.
+ */
+export function parseConfigOptions(
+  configOptions: readonly unknown[] | null | undefined,
+): AcpConfigOption[] {
+  return (configOptions ?? [])
+    .map(readConfigOption)
+    .filter((item): item is AcpConfigOption => item !== undefined)
+}
+
+/**
  * Flatten one `session/new` configOptions array into selectable models.
  */
 export function extractModelOptions(
   configOptions: readonly unknown[] | null | undefined,
 ): ModelOptionsResult {
-  const parsed = (configOptions ?? [])
-    .map(readConfigOption)
-    .filter((item): item is AcpConfigOption => item !== undefined)
+  const parsed = parseConfigOptions(configOptions)
   if (parsed.length === 0) {
     return {
       ok: false,
