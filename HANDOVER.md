@@ -47,6 +47,11 @@ packages/
 
 依赖只能向上：`worker-protocol` → `worker-runtime` → `acp-protocol` → `acp-worker`。
 
+## 本轮（2026-08-17）
+
+- npm 发布：各包 `prepare` 改为 `prepack`（用户安装不再跑 tsc），补 `publishConfig.access=public`。
+- tag `v*.*.*` 触发 GitHub Actions，按 tag 写版本后 `pnpm -r publish` 到 npmjs。预发布走 `next`。
+
 ## 本轮（2026-08-16）
 
 - 注释规范写入 `.agents/skills/dsh-plugin-conventions/references/comments.md`。
@@ -103,6 +108,8 @@ npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
 # 或源码检出（要先 pnpm install && pnpm run build）
 pnpm --dir ../deepseek-harness dsh web --patch /tmp/dsh-pihuo-web.patch.yml
 ```
+
+发布（npmjs）：推送 `vX.Y.Z` tag → `.github/workflows/publish.yml`。仓库需 Secret `NPM_TOKEN`，npm 上需有公开组织 `pihuo`。用户安装：`dsh plugin --profile web add @pihuo/dsh-pihuo`。
 
 假 ACP：`packages/acp-protocol/bin/mock-acp-agent.mjs`（`MOCK_TEXT` / `MOCK_STOP` / `MOCK_HANG` / `MOCK_PERMISSION`）。
 

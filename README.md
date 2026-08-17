@@ -16,10 +16,27 @@ DeepSeek Harness 插件。把本机 ACP 进程接到会话里当 Worker。
 ## 安装
 
 ```sh
-dsh plugin --profile web add github:xun404/dsh-pihuo-plugins#path:packages/bundle
+dsh plugin --profile web add @pihuo/dsh-pihuo
 ```
 
 安装后打开设置里的 ACP Worker，从目录添加并信任。新会话选用 PiHuo Leader。
+
+## 发布
+
+推送 `vX.Y.Z` tag 会触发 GitHub Actions，把 `packages/*` 发到 [npmjs](https://www.npmjs.com)。预发布 tag（如 `v0.1.0-rc.1`）走 npm dist-tag `next`，不会盖掉 `latest`。
+
+一次配置：
+
+1. 在 [npmjs.com](https://www.npmjs.com/org/create) 创建公开组织 `pihuo`。
+2. 创建 Granular Access Token（Read and write，范围 `@pihuo/*`，允许发布新包）。
+3. 仓库 Settings → Secrets and variables → Actions 添加 `NPM_TOKEN`。
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+CI 会用 tag 覆盖各包 `version` 再 publish，不必先改 `package.json`。
 
 ## 本地开发
 

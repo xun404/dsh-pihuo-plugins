@@ -29,7 +29,7 @@
   },
   "files": ["lib/index.js", "lib/client.js", "lib/**/*.d.ts"],
   "scripts": {
-    "prepare": "tsc -p tsconfig.json && node scripts/build-client.mjs",
+    "prepack": "tsc -p tsconfig.json && node scripts/build-client.mjs",
     "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test tests/*.test.ts"
@@ -41,6 +41,15 @@
     "@types/react": "~18.3.1",
     "esbuild": "^0.25.9",
     "react": "^18.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xun404/dsh-pihuo-plugins.git",
+    "directory": "packages/ui-acp-worker"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "license": "MIT"
 }

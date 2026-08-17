@@ -12,9 +12,10 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "typecheck": "pnpm -r --if-present run typecheck",
-    "test": "pnpm -r --if-present run test",
+    "test": "pnpm -r --if-present run test && node --test scripts/*.test.mjs",
     "cdp": "node scripts/cdp-check.mjs",
-    "dev:patch": "node scripts/write-dev-patch.mjs"
+    "dev:patch": "node scripts/write-dev-patch.mjs",
+    "set-release-version": "node scripts/set-release-version.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

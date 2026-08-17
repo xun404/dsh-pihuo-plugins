@@ -1,0 +1,84 @@
+# Publish every packages/* tarball to npmjs when a version tag is pushed.
+# Tag vX.Y.Z → dist-tag latest. Tag vX.Y.Z-<pre> → dist-tag next.
+#
+# One-time setup (repo Settings → Secrets and variables → Actions):
+#   NPM_TOKEN  npm granular token, Read and write, @pihuo/*, allow publishing
+#              new packages. Create the `pihuo` org on npmjs first.
+name: Publish npm
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+          always-auth: true
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Set package versions from tag
+        run: node scripts/set-release-version.mjs --from-tag "$GITHUB_REF_NAME"
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Inspect tarballs
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pihuo-packs
+          pnpm --filter @pihuo/dsh-pihuo pack --pack-destination /tmp/pihuo-packs
+          pnpm --filter @pihuo/dsh-pihuo-acp-ui pack --pack-destination /tmp/pihuo-packs
+          pnpm --filter @pihuo/dsh-pihuo-presets pack --pack-destination /tmp/pihuo-packs
+          bundle=$(echo /tmp/pihuo-packs/pihuo-dsh-pihuo-*.tgz)
+          ui=$(echo /tmp/pihuo-packs/pihuo-dsh-pihuo-acp-ui-*.tgz)
+          presets=$(echo /tmp/pihuo-packs/pihuo-dsh-pihuo-presets-*.tgz)
+          tar -tzf "$bundle" | grep -qx 'package/cordis.patch.yml'
+          tar -tzf "$ui" | grep -qx 'package/lib/client.js'
+          tar -tzf "$presets" | grep -q 'package/presets/pihuo-leader/'
+          if tar -xOf "$bundle" package/package.json | grep -q workspace:; then
+            echo 'bundle tarball still has workspace: protocol' >&2
+            exit 1
+          fi
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          version=${GITHUB_REF_NAME#v}
+          extra=()
+          if [[ "$version" == *-* ]]; then
+            extra+=(--tag next)
+          fi
+          pnpm -r --filter './packages/**' publish \
+            --access public \
+            --no-git-checks \
+            --registry=https://registry.npmjs.org \
+            "${extra[@]}"

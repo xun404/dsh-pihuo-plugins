@@ -13,7 +13,7 @@
   },
   "files": ["lib/**/*.js", "lib/**/*.d.ts"],
   "scripts": {
-    "prepare": "tsc -p tsconfig.json",
+    "prepack": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test tests/*.test.ts"
@@ -25,6 +25,15 @@
   },
   "devDependencies": {
     "tsx": "^4.21.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xun404/dsh-pihuo-plugins.git",
+    "directory": "packages/acp-worker"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "license": "MIT"
 }
