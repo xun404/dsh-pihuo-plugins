@@ -1,6 +1,7 @@
 {
   "name": "@pihuo/dsh-acp-protocol",
   "version": "0.1.0",
+  "description": "ACP 1.2 client driver used by @pihuo/dsh-pihuo-acp-worker",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -11,7 +12,7 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["lib/**/*.js", "lib/**/*.d.ts", "bin/mock-acp-agent.mjs"],
+  "files": ["lib/**/*.js", "lib/**/*.d.ts", "bin/mock-acp-agent.mjs", "README.md"],
   "scripts": {
     "prepack": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json",

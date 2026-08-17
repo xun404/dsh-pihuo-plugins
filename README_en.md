@@ -1,8 +1,52 @@
-# dsh-pihuo-plugins
+# PiHuo
 
-[中文](README.md)
+English | [中文](README.md)
 
-A DeepSeek Harness plugin that runs local ACP processes as workers in a chat.
+PiHuo is a set of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) **out-of-tree plugins**. It runs local [ACP](https://agentclientprotocol.com) processes as workers in a chat, dispatched by the Leader.
+
+**Everything is a plugin.** The runtime is [Cordis](https://github.com/cordiverse/cordis). This repository does not patch harness.
+
+## Developer preview
+
+PiHuo is in _developer preview_ and tracks `dsh` closely. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+
+## Install
+
+Requires [Node.js](https://nodejs.org/) 22+ and DeepSeek Harness.
+
+### Install from `npm`
+
+```sh
+dsh plugin --profile web add @pihuo/dsh-pihuo
+dsh web
+```
+
+The Web UI is served at `http://127.0.0.1:3080/` by default.
+
+Open **ACP Worker** in Settings, add a worker from the official catalog, and trust it. New sessions should use **PiHuo Leader**.
+
+Prerelease (npm dist-tag `next`):
+
+```sh
+dsh plugin --profile web add @pihuo/dsh-pihuo@next
+```
+
+Bundle: [`@pihuo/dsh-pihuo`](https://www.npmjs.com/package/@pihuo/dsh-pihuo).
+
+### Run from source
+
+```sh
+git clone https://github.com/xun404/dsh-pihuo-plugins.git
+cd dsh-pihuo-plugins
+pnpm install
+pnpm test
+pnpm typecheck
+pnpm build
+node scripts/write-dev-patch.mjs /tmp/dsh-pihuo-web.patch.yml
+npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
+```
+
+Open `http://127.0.0.1:3080/`.
 
 ## Features
 
@@ -13,40 +57,18 @@ A DeepSeek Harness plugin that runs local ACP processes as workers in a chat.
 - Calling `acp_worker` seats the worker on the team
 - The run card shows thought, tools, and replies in arrival order
 
-## Install
+## Community and support
 
-```sh
-dsh plugin --profile web add @pihuo/dsh-pihuo
-```
+- Bugs and feedback: [GitHub Issues](https://github.com/xun404/dsh-pihuo-plugins/issues)
+- This repository carries the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic
+- DeepSeek Harness: [repo](https://github.com/deepseek-ai/deepseek-harness) · [Discord](https://discord.gg/Ycq5dCaS4)
 
-Then open ACP Worker in Settings, add from the catalog, and trust the worker. New sessions should use PiHuo Leader.
+## Development
 
-## Release
+Agents should follow [AGENTS.md](AGENTS.md). Progress lives in [HANDOVER.md](HANDOVER.md).
 
-Push a `vX.Y.Z` tag. GitHub Actions publishes every `packages/*` package to [npmjs](https://www.npmjs.com). Prerelease tags such as `v0.1.0-rc.1` use the `next` dist-tag and do not replace `latest`.
+Push a `vX.Y.Z` tag to publish `packages/*` to npmjs. Prerelease tags such as `v0.1.0-rc.1` use dist-tag `next`.
 
-One-time setup:
+## License
 
-1. Create a public `pihuo` org at [npmjs.com](https://www.npmjs.com/org/create).
-2. Create a granular access token (read and write, `@pihuo/*`, allow publishing new packages).
-3. Add it as the `NPM_TOKEN` Actions secret.
-
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-CI writes the tag version onto each package before publish. You do not need a bump commit.
-
-## Local development
-
-```sh
-pnpm install
-pnpm test
-pnpm typecheck
-pnpm build
-node scripts/write-dev-patch.mjs /tmp/dsh-pihuo-web.patch.yml
-npx --yes @deepseek-ai/dsh web --patch /tmp/dsh-pihuo-web.patch.yml
-```
-
-Open http://127.0.0.1:3080/
+[MIT](LICENSE)

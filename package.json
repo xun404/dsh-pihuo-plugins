@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Out-of-tree DeepSeek Harness plugins: PiHuo-style workers on the dsh agent loop",
+  "description": "PiHuo: DeepSeek Harness plugins that run local ACP processes as chat workers",
   "license": "MIT",
   "repository": {
     "type": "git",

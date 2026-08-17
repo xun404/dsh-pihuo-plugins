@@ -1,6 +1,7 @@
 {
   "name": "@pihuo/dsh-pihuo-acp-ui",
   "version": "0.1.0",
+  "description": "Web UI for PiHuo ACP workers: settings, team header, tool cards",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -27,7 +28,7 @@
       ]
     }
   },
-  "files": ["lib/index.js", "lib/client.js", "lib/**/*.d.ts"],
+  "files": ["lib/index.js", "lib/client.js", "lib/**/*.d.ts", "README.md"],
   "scripts": {
     "prepack": "tsc -p tsconfig.json && node scripts/build-client.mjs",
     "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",

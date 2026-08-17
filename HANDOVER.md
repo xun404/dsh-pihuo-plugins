@@ -54,6 +54,7 @@ packages/
 - 冒烟 `v0.1.0-smoke.3`：install/build/test/inspect 通过（`workspace:` 已改写成 `^0.1.0-smoke.3`）。
 - 冒烟 `v0.1.0-smoke.4`：`npm whoami` = `xun404`。Publish 被 `E403` 挡住：npm 要求账号开 2FA，或 granular token 勾选 Bypass 2FA。
 - 冒烟 `v0.1.0-smoke.5`：**通过**。7 个包已发到 npmjs，版本 `0.1.0-smoke.5`，dist-tag `next`。正式版打 `v0.1.0` 才会上 `latest`。
+- README 按 harness 版式重写（npm / 源码两条安装路径）。`@pihuo/dsh-pihuo` 补包内 README + `description`。仓库加 `dsh` / `acp` / `pihuo` 等 topic。
 
 ## 本轮（2026-08-16）
 

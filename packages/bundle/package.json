@@ -1,6 +1,7 @@
 {
   "name": "@pihuo/dsh-pihuo",
   "version": "0.1.0",
+  "description": "DeepSeek Harness bundle: run local ACP processes as chat workers",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -12,7 +13,7 @@
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/index.d.ts", "cordis.patch.yml"],
+  "files": ["lib/index.js", "lib/index.d.ts", "cordis.patch.yml", "README.md"],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -28,6 +29,7 @@
     "@pihuo/dsh-pihuo-acp-ui": "workspace:^",
     "@pihuo/dsh-pihuo-presets": "workspace:^"
   },
+  "homepage": "https://github.com/xun404/dsh-pihuo-plugins#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xun404/dsh-pihuo-plugins.git",
