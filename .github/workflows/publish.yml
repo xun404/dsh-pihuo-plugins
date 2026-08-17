@@ -76,6 +76,11 @@ jobs:
             console.log(JSON.stringify({ version: pkg.version, dependencies: pkg.dependencies }, null, 2))
           '
 
+      - name: Check npm auth
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm whoami --registry=https://registry.npmjs.org
+
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

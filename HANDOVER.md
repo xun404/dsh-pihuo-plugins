@@ -51,6 +51,7 @@ packages/
 
 - npm 发布：各包 `prepare` 改为 `prepack`（用户安装不再跑 tsc），补 `publishConfig.access=public`。
 - tag `v*.*.*` 触发 GitHub Actions，按 tag 写版本后 `pnpm -r publish` 到 npmjs。预发布走 `next`。
+- 冒烟 `v0.1.0-smoke.3`：install/build/test/inspect 通过（`workspace:` 已改写成 `^0.1.0-smoke.3`）。Publish 被 npm `PUT 404` 挡住——`@pihuo` scope 的 token/组织权限还没对上，包未上架。
 
 ## 本轮（2026-08-16）
 
