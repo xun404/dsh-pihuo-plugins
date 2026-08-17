@@ -52,18 +52,20 @@ jobs:
       - name: Inspect tarballs
         run: |
           set -euo pipefail
+          version=${GITHUB_REF_NAME#v}
           mkdir -p /tmp/pihuo-packs
           pnpm --filter @pihuo/dsh-pihuo pack --pack-destination /tmp/pihuo-packs
           pnpm --filter @pihuo/dsh-pihuo-acp-ui pack --pack-destination /tmp/pihuo-packs
           pnpm --filter @pihuo/dsh-pihuo-presets pack --pack-destination /tmp/pihuo-packs
-          bundle=$(echo /tmp/pihuo-packs/pihuo-dsh-pihuo-*.tgz)
-          ui=$(echo /tmp/pihuo-packs/pihuo-dsh-pihuo-acp-ui-*.tgz)
-          presets=$(echo /tmp/pihuo-packs/pihuo-dsh-pihuo-presets-*.tgz)
+          bundle=/tmp/pihuo-packs/pihuo-dsh-pihuo-${version}.tgz
+          ui=/tmp/pihuo-packs/pihuo-dsh-pihuo-acp-ui-${version}.tgz
+          presets=/tmp/pihuo-packs/pihuo-dsh-pihuo-presets-${version}.tgz
           tar -tzf "$bundle" | grep -qx 'package/cordis.patch.yml'
           tar -tzf "$ui" | grep -qx 'package/lib/client.js'
           tar -tzf "$presets" | grep -q 'package/presets/pihuo-leader/'
           if tar -xOf "$bundle" package/package.json | grep -q workspace:; then
             echo 'bundle tarball still has workspace: protocol' >&2
+            tar -xOf "$bundle" package/package.json >&2
             exit 1
           fi
 
