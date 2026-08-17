@@ -53,21 +53,28 @@ jobs:
         run: |
           set -euo pipefail
           version=${GITHUB_REF_NAME#v}
-          mkdir -p /tmp/pihuo-packs
+          mkdir -p /tmp/pihuo-packs /tmp/pihuo-unpacked
           pnpm --filter @pihuo/dsh-pihuo pack --pack-destination /tmp/pihuo-packs
           pnpm --filter @pihuo/dsh-pihuo-acp-ui pack --pack-destination /tmp/pihuo-packs
           pnpm --filter @pihuo/dsh-pihuo-presets pack --pack-destination /tmp/pihuo-packs
-          bundle=/tmp/pihuo-packs/pihuo-dsh-pihuo-${version}.tgz
-          ui=/tmp/pihuo-packs/pihuo-dsh-pihuo-acp-ui-${version}.tgz
-          presets=/tmp/pihuo-packs/pihuo-dsh-pihuo-presets-${version}.tgz
-          tar -tzf "$bundle" | grep -qx 'package/cordis.patch.yml'
-          tar -tzf "$ui" | grep -qx 'package/lib/client.js'
-          tar -tzf "$presets" | grep -q 'package/presets/pihuo-leader/'
-          if tar -xOf "$bundle" package/package.json | grep -q workspace:; then
-            echo 'bundle tarball still has workspace: protocol' >&2
-            tar -xOf "$bundle" package/package.json >&2
-            exit 1
-          fi
+          tar -xzf /tmp/pihuo-packs/pihuo-dsh-pihuo-${version}.tgz -C /tmp/pihuo-unpacked
+          mv /tmp/pihuo-unpacked/package /tmp/pihuo-unpacked/bundle
+          tar -xzf /tmp/pihuo-packs/pihuo-dsh-pihuo-acp-ui-${version}.tgz -C /tmp/pihuo-unpacked
+          mv /tmp/pihuo-unpacked/package /tmp/pihuo-unpacked/ui
+          tar -xzf /tmp/pihuo-packs/pihuo-dsh-pihuo-presets-${version}.tgz -C /tmp/pihuo-unpacked
+          mv /tmp/pihuo-unpacked/package /tmp/pihuo-unpacked/presets
+          test -f /tmp/pihuo-unpacked/bundle/cordis.patch.yml
+          test -f /tmp/pihuo-unpacked/ui/lib/client.js
+          test -f /tmp/pihuo-unpacked/presets/presets/pihuo-leader/preset.yml
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs"
+            const pkg = JSON.parse(readFileSync("/tmp/pihuo-unpacked/bundle/package.json", "utf8"))
+            const deps = JSON.stringify(pkg.dependencies ?? {})
+            if (deps.includes("workspace:")) {
+              throw new Error("bundle tarball still has workspace: protocol: " + deps)
+            }
+            console.log(JSON.stringify({ version: pkg.version, dependencies: pkg.dependencies }, null, 2))
+          '
 
       - name: Publish
         env:
